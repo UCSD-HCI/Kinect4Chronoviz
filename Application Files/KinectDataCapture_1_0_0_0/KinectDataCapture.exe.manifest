@@ -1,0 +1,286 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<asmv1:assembly xsi:schemaLocation="urn:schemas-microsoft-com:asm.v1 assembly.adaptive.xsd" manifestVersion="1.0" xmlns:asmv3="urn:schemas-microsoft-com:asm.v3" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns:co.v2="urn:schemas-microsoft-com:clickonce.v2" xmlns="urn:schemas-microsoft-com:asm.v2" xmlns:asmv1="urn:schemas-microsoft-com:asm.v1" xmlns:asmv2="urn:schemas-microsoft-com:asm.v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:co.v1="urn:schemas-microsoft-com:clickonce.v1">
+  <asmv1:assemblyIdentity name="KinectDataCapture.exe" version="1.0.0.0" publicKeyToken="6e33bbdcad21496e" language="neutral" processorArchitecture="x86" type="win32" />
+  <description asmv2:iconFile="KinectDataCapture.ico" xmlns="urn:schemas-microsoft-com:asm.v1" />
+  <application />
+  <entryPoint>
+    <assemblyIdentity name="KinectDataCapture" version="1.0.0.0" language="neutral" processorArchitecture="x86" />
+    <commandLine file="KinectDataCapture.exe" parameters="" />
+  </entryPoint>
+  <trustInfo>
+    <security>
+      <applicationRequestMinimum>
+        <PermissionSet Unrestricted="true" ID="Custom" SameSite="site" />
+        <defaultAssemblyRequest permissionSetReference="Custom" />
+      </applicationRequestMinimum>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <!--
+          UAC Manifest Options
+          If you want to change the Windows User Account Control level replace the 
+          requestedExecutionLevel node with one of the following.
+
+        <requestedExecutionLevel  level="asInvoker" uiAccess="false" />
+        <requestedExecutionLevel  level="requireAdministrator" uiAccess="false" />
+        <requestedExecutionLevel  level="highestAvailable" uiAccess="false" />
+
+         If you want to utilize File and Registry Virtualization for backward 
+         compatibility then delete the requestedExecutionLevel node.
+    -->
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <dependency>
+    <dependentOS>
+      <osVersionInfo>
+        <os majorVersion="5" minorVersion="1" buildNumber="2600" servicePackMajor="0" />
+      </osVersionInfo>
+    </dependentOS>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="preRequisite" allowDelayedBinding="true">
+      <assemblyIdentity name="Microsoft.Windows.CommonLanguageRuntime" version="4.0.30319.0" />
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="preRequisite" allowDelayedBinding="true">
+      <assemblyIdentity name="Microsoft.Kinect" version="1.5.0.0" publicKeyToken="31BF3856AD364E35" language="neutral" processorArchitecture="msil" />
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="preRequisite" allowDelayedBinding="true">
+      <assemblyIdentity name="Microsoft.Speech" version="11.0.0.0" publicKeyToken="31BF3856AD364E35" language="neutral" processorArchitecture="msil" />
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Emgu.CV.dll" size="279552">
+      <assemblyIdentity name="Emgu.CV" version="2.3.0.1416" publicKeyToken="7281126722AB4438" language="neutral" processorArchitecture="msil" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+        <dsig:DigestValue>9TP7bX9kCYCLjVYNjmVejgeG9Aw=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Emgu.CV.UI.dll" size="113152">
+      <assemblyIdentity name="Emgu.CV.UI" version="2.3.0.1416" publicKeyToken="7281126722AB4438" language="neutral" processorArchitecture="msil" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+        <dsig:DigestValue>2ZAsY7KwIbQ9Mb0JRJ0MA2KTbic=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="zh-CN\Emgu.CV.UI.resources.dll" size="10240">
+      <assemblyIdentity name="Emgu.CV.UI.resources" version="2.3.0.1416" publicKeyToken="7281126722AB4438" language="zh-CN" processorArchitecture="msil" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+        <dsig:DigestValue>FXOk9x/coRDbHEfmorBM8uYpXgc=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Emgu.Util.dll" size="23040">
+      <assemblyIdentity name="Emgu.Util" version="2.3.0.1416" publicKeyToken="7281126722AB4438" language="neutral" processorArchitecture="msil" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+        <dsig:DigestValue>0Gx+2FRrcmVQ7z5IwrXhs98Xu5c=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="KinectDataCapture.exe" size="42496">
+      <assemblyIdentity name="KinectDataCapture" version="1.0.0.0" language="neutral" processorArchitecture="x86" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+        <dsig:DigestValue>kdF4I4mr13TUgdW0+waqkvp/svQ=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Microsoft.Samples.Kinect.WpfViewers.dll" size="117248">
+      <assemblyIdentity name="Microsoft.Samples.Kinect.WpfViewers" version="0.0.0.0" language="neutral" processorArchitecture="msil" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+        <dsig:DigestValue>6McJQHnW/wxbnk2WK/lQbYe/Sk8=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="ZedGraph.dll" size="307200">
+      <assemblyIdentity name="ZedGraph" version="5.1.5.28844" publicKeyToken="02A83CBD123FCD60" language="neutral" processorArchitecture="msil" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+        <dsig:DigestValue>BMwQ/MmSgKzmPpgjmSJ/V+P2YN8=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="zh-CN\ZedGraph.resources.dll" size="4096">
+      <assemblyIdentity name="ZedGraph.resources" version="5.1.5.28844" publicKeyToken="02A83CBD123FCD60" language="zh-cn" processorArchitecture="msil" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+        <dsig:DigestValue>bQKr6gf6Dhkv28pRwAjAMBg08n4=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <file name="KinectDataCapture.ico" size="1078">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>flt9FgdHWOhK6TaaHl6VCN9mx7I=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_calib3d231.dll" size="732672">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>Lh054mYOGAEcPPF52fTkXO60AAo=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_contrib231.dll" size="546304">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>d+QrV/1Lt0FHHMM56xn/B8OX9KU=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_core231.dll" size="1715200">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>ue4D0wFW+PjGmtrtOOIHcbJo+KI=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_features2d231.dll" size="866304">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>hrLTsZFrfG/rGCgPSXHIU0A5jcE=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_ffmpeg.dll" size="5909072">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>1B9o5pkw5yXnGXS7mxbIqVVQuAk=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_flann231.dll" size="395264">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>YhtxxSacI+HpC5ANxuRGPAd8Dck=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_gpu231.dll" size="58849792">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>vrN+xXmAUrGrpOqCN0+5NTRxo3I=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_highgui231.dll" size="892416">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>2l+FKMtwpeG7YzXSrEeoKu1Jm6U=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_imgproc231.dll" size="1629696">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>mFRz4azrTc2XnrmUXJWU8hOtlWg=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_legacy231.dll" size="761856">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>uKrKNmMhp2aGW1D7Ol4Jccgtpr8=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_ml231.dll" size="436224">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>jnrvnHhvCYNjU1T+OSdyoG/wm4Q=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_objdetect231.dll" size="538624">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>wue9UbJSEdBJ/DwcQUSlReiC6N0=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="opencv_video231.dll" size="285184">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>JLYMRvkV9zThKCWIAVMxxmXd+Y8=</dsig:DigestValue>
+    </hash>
+  </file>
+  <file name="Recording.jpg" size="63788">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>kc9rAlv1wD9XjyDGZsTaHfAXlEk=</dsig:DigestValue>
+    </hash>
+  </file>
+<publisherIdentity name="CN=pilot\dcoghci" issuerKeyHash="958f0b047a94eb958f4a0dc871de1252c30e7728" /><Signature Id="StrongNameSignature" xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" /><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /><Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" /><DigestValue>bk/vnHa0ikjsPz9jw9sF0GZoW5Q=</DigestValue></Reference></SignedInfo><SignatureValue>EKcKoXD5XvEdQOOjb0PBc1uMRjxjKPqc97fEgLet6YxUIJ1uoNdqMEXXpUer48ZDWe+iA3TS9+lHvW1ujtez+U5Gl1IyaAVUa4kSzWEAnHGSBt+d2JoP30eqV27QbBJF5DwTQTycpTvPijAYw6ZmVl/b9VirLG1fVCAe7igNoVs=</SignatureValue><KeyInfo Id="StrongNameKeyInfo"><KeyValue><RSAKeyValue><Modulus>oyfJcWX+vJIqBuj66sCqZ0unM4LxEA7DEFUzIQHX+pRadiP5JywTA77aObkg99JTEfanzrvGMtOXxafSHQW5Luv0g0hJ5Kho2M64TCs83lhQDKpACfzBy0kO/qw1/COg6mBr1EnbJdH+w929+330Pu5Hc6daS4qiWYO/Okl0GSU=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue><msrel:RelData xmlns:msrel="http://schemas.microsoft.com/windows/rel/2005/reldata"><r:license xmlns:r="urn:mpeg:mpeg21:2003:01-REL-R-NS" xmlns:as="http://schemas.microsoft.com/windows/pki/2005/Authenticode"><r:grant><as:ManifestInformation Hash="945b6866d005dbc3633f3fec488ab4769cef4f6e" Description="" Url=""><as:assemblyIdentity name="KinectDataCapture.exe" version="1.0.0.0" publicKeyToken="6e33bbdcad21496e" language="neutral" processorArchitecture="x86" type="win32" /></as:ManifestInformation><as:SignedBy /><as:AuthenticodePublisher><as:X509SubjectName>CN=pilot\dcoghci</as:X509SubjectName></as:AuthenticodePublisher></r:grant><r:issuer><Signature Id="AuthenticodeSignature" xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" /><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /><Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" /><DigestValue>dxYfpg+H7jVjy1CTMPaD+qpj4P4=</DigestValue></Reference></SignedInfo><SignatureValue>hBAyE3IHn4HHGIdakfcIq2xYqjlHxpXa9pniJA0qB7+74QlA+cYPuNqyAs+U42utpoQ9Ln2uDLjJsELqkGkNChDrxD8kB6vrotW5L7+Hv7d2WDgGFaytuLQAoWKj/8tpcKjIi5W/wqb4ar/j7cB/alGNySbfeaTFW7BhMyIv8jI=</SignatureValue><KeyInfo><KeyValue><RSAKeyValue><Modulus>oyfJcWX+vJIqBuj66sCqZ0unM4LxEA7DEFUzIQHX+pRadiP5JywTA77aObkg99JTEfanzrvGMtOXxafSHQW5Luv0g0hJ5Kho2M64TCs83lhQDKpACfzBy0kO/qw1/COg6mBr1EnbJdH+w929+330Pu5Hc6daS4qiWYO/Okl0GSU=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue><X509Data><X509Certificate>MIIBzTCCATagAwIBAgIQTgwyPCkVoqRDLjS+hIr0NzANBgkqhkiG9w0BAQUFADAlMSMwIQYDVQQDHhoAcABpAGwAbwB0AFwAZABjAG8AZwBoAGMAaTAeFw0xMjA5MjgwNDUyMzVaFw0xMzA5MjgxMDUyMzVaMCUxIzAhBgNVBAMeGgBwAGkAbABvAHQAXABkAGMAbwBnAGgAYwBpMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCjJ8lxZf68kioG6PrqwKpnS6czgvEQDsMQVTMhAdf6lFp2I/knLBMDvto5uSD30lMR9qfOu8Yy05fFp9IdBbku6/SDSEnkqGjYzrhMKzzeWFAMqkAJ/MHLSQ7+rDX8I6DqYGvUSdsl0f7D3b37ffQ+7kdzp1pLiqJZg786SXQZJQIDAQABMA0GCSqGSIb3DQEBBQUAA4GBAIE2DyPk0QSjvje402X2BJaIjyg1YHyqAJGc9x53xfzQRXrp2BF05x6PN9tCr/X4XIHfUYZLU4iEWIb5t37HzbxtMZvo5IVxDUrPAgvgiQgsC3wjUvFZvvmsOTWhAh0FxtFDRrTvOBYeTx4r28mMb2krVoj1KMjoBDXyt9F/IRbr</X509Certificate></X509Data></KeyInfo></Signature></r:issuer></r:license></msrel:RelData></KeyInfo></Signature></asmv1:assembly>
