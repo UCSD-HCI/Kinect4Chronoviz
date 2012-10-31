@@ -356,6 +356,7 @@ namespace KinectDataCapture
             kinectSensor.DepthFrameReady += new EventHandler<DepthImageFrameReadyEventArgs>(nui_DepthFrameReady);
             kinectSensor.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>(nui_SkeletonFrameReady);
             kinectSensor.ColorFrameReady += new EventHandler<ColorImageFrameReadyEventArgs>(nui_ColorFrameReady);
+            kinectSensor.AllFramesReady += new EventHandler<AllFramesReadyEventArgs>(nui_AllFramesReady);
             
         }
 
@@ -532,7 +533,7 @@ namespace KinectDataCapture
 
         void nui_SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
         {
-
+            
             SkeletonFrame skeletonFrame = e.OpenSkeletonFrame();
             if (skeletonFrame == null)
             {
@@ -677,6 +678,44 @@ namespace KinectDataCapture
             logSkeletonJointPositions();
             logVelocity();
             //logBodyProximity(headDistance, spineDistance);
+        }
+
+        void nui_AllFramesReady(object sender, AllFramesReadyEventArgs e)
+        {
+            // Initialize data arrays
+            byte[] colorPixelData = new byte[kinectSensor.ColorStream.FramePixelDataLength];
+            short[] depthPixelData = new short[kinectSensor.DepthStream.FramePixelDataLength];
+            Skeleton[] skeletonData = new Skeleton[6];
+
+            using (ColorImageFrame colorImageFrame = e.OpenColorImageFrame())
+            {
+                if (colorImageFrame == null)
+                    return;
+                colorImageFrame.CopyPixelDataTo(colorPixelData);
+            }
+
+            using (DepthImageFrame depthImageFrame = e.OpenDepthImageFrame())
+            {
+                if (depthImageFrame == null)
+                    return;
+                depthImageFrame.CopyPixelDataTo(depthPixelData);
+            }
+
+            using (SkeletonFrame skeletonFrame = e.OpenSkeletonFrame())
+            {
+                if (skeletonFrame == null)
+                    return;
+                skeletonFrame.CopySkeletonDataTo(skeletonData);
+            }
+
+            var skeleton = skeletonData.FirstOrDefault(s => s.TrackingState == SkeletonTrackingState.Tracked);
+            if (skeleton == null)
+                return;
+            /*
+            FaceTrackFrame faceFrame = faceTracker.Track(kinectSensor.ColorStream.Format, colorPixelData,
+                                  kinectSensor.DepthStream.Format, depthPixelData,
+                                  skeleton);
+             * */
         }
 
         void logVelocity() {
@@ -1073,8 +1112,8 @@ namespace KinectDataCapture
             audioSource.NoiseSuppression = true;
             audioSource.AutomaticGainControlEnabled = true;
             //Start recording beamchange
-            audioSource.BeamAngleChanged += new EventHandler<BeamAngleChangedEventArgs>(audioSource_BeamAngleChanged);
-            
+            audioSource.SoundSourceAngleChanged += new EventHandler<SoundSourceAngleChangedEventArgs>(audioSource_SoundAngleChanged);
+
             return audioSource;
         }
 
@@ -1083,11 +1122,12 @@ namespace KinectDataCapture
             loggerQueue.addToQueue(audioRecordingFilename, filename);
         }
 
-        void audioSource_BeamAngleChanged(object sender, BeamAngleChangedEventArgs e)
+        void audioSource_SoundAngleChanged(object sender, SoundSourceAngleChangedEventArgs e)
         {
-            BeamAngle = e.Angle * -1;
+            
+            string info = e.Angle + "," + e.ConfidenceLevel;
             if (logging)
-                loggerQueue.addToQueue(audioAngleFileName, e.Angle.ToString());
+                loggerQueue.addToQueue(audioAngleFileName, info);
         }
 
 
