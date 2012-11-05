@@ -109,7 +109,7 @@ namespace KinectDataCapture
                 columnHeader = "Time,StatusMessage";            
             }
             else if(fileName.Contains(MainWindow.audioAngleFileName)){
-                columnHeader = "Time,SpeechAngle";                        
+                columnHeader = "Time,AudioAngle,AudioConfidence";                        
             }
             else if(fileName.Contains(MainWindow.audioStateFileName)){
                 columnHeader = "Time,SpeechState,AudioAngle";            

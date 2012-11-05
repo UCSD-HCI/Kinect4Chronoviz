@@ -57,7 +57,8 @@
                 <CheckBox Height="23" Name="nearMode" Content="   Enable Near Mode" Width="190" Margin="10,0,0,5" Checked="setNearMode" Unchecked="setNearMode"/>
                 <Button Width="200" Height="50" Name="startButton" Click="startButton_Click" Content="Start Logging"></Button>
             </StackPanel>
-            <Label FontSize="14" Name="nofFrames" Focusable="False" Content="Frames logged:    0" Margin="20,20,20,0" Width="200" Height="50" BorderThickness="10" />
+            <Label FontSize="14" Name="nofFrames" Focusable="False" Content="Frames logged:    0" Margin="20,20,20,0" Width="200" Height="52" BorderThickness="10" />
+            <Label Height="25" Name="lblHeadPose" Width="132" />
         </StackPanel>
     </StackPanel>
 </Window>

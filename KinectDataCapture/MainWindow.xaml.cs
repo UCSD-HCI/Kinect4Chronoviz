@@ -59,6 +59,9 @@ namespace KinectDataCapture
         LoggerQueue loggerQueue;
         //VideoLogger videoLog;
 
+
+        FaceLogger Faces;
+
         string curDir;
         public const string appStatusFileName = "appStatus.txt";
         public const string audioAngleFileName = "audioAngle.txt";
@@ -174,6 +177,7 @@ namespace KinectDataCapture
 
             //nui = new Runtime();
             //faceDetection = new FaceDetection(this); 
+
             // Walk through KinectSensors to find the first one with a Connected status
             // Walk through KinectSensors to find all
             
@@ -262,6 +266,9 @@ namespace KinectDataCapture
             updateAppStatus("Initializing video streams");
             initializeVideoStreams();
 
+            updateAppStatus("Initializing Face Tracking");
+            Faces = new FaceLogger(newKinect, lblHeadPose);
+
             updateAppStatus("Ready to capture");
             newKinect.Start();
             audioStream = audioSource.Start();
@@ -293,13 +300,9 @@ namespace KinectDataCapture
             {
                 updateAppStatus("Starting logging");
                 resetFramesLogged();
-                
-                string path = Environment.GetEnvironmentVariable("userprofile") + "\\Desktop\\Kinect_Logs";
-                Directory.CreateDirectory(path);
-                int index = DeviceId.LastIndexOf("\\");
-                curDir = path + "\\" +  DeviceId.Substring(index+1, DeviceId.Length-index-1) 
-                    + "\\" + DateTime.Now.Month + "-" + DateTime.Now.Day + "-" + DateTime.Now.Year + " " 
-                    + DateTime.Now.Hour + "." + DateTime.Now.Minute + "." + DateTime.Now.Second +"." + DateTime.Now.Millisecond;
+
+
+                getLoggingDirectory();
                 //curDir = path + "\\" + DateTime.Now.Month + "-" + DateTime.Now.Day + " " + DateTime.Now.Hour + "." + DateTime.Now.Minute + "." + DateTime.Now.Millisecond;
                 loggerQueue = new LoggerQueue(curDir);
 
@@ -337,6 +340,25 @@ namespace KinectDataCapture
                 logging = false;
                 IsAudioRecording = false;
             }
+        }
+
+        private string getLoggingDirectory()
+        {
+            //Create parent directory if it does not exist
+            string path = Environment.GetEnvironmentVariable("userprofile") + "\\Desktop\\Kinect_Logs";
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+
+            //Get Device ID name
+            int index = DeviceId.LastIndexOf("\\");
+            string deviceId = DeviceId.Substring(index + 1, DeviceId.Length - index - 1);
+
+            //Build new folder for current logging session MMDDYY HH.MM.SS.mmm
+            string curDir = path + "\\" + deviceId 
+                + "\\" + DateTime.Now.Month + "-" + DateTime.Now.Day + "-" + DateTime.Now.Year + " "
+                + DateTime.Now.Hour + "." + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond;
+
+            return curDir;
         }
 
         public void initializeVideoStreams()
@@ -533,12 +555,13 @@ namespace KinectDataCapture
 
         void nui_SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
         {
-            
+            //Get skeleton Frame
             SkeletonFrame skeletonFrame = e.OpenSkeletonFrame();
             if (skeletonFrame == null)
             {
                 return;
             }
+
             int iSkeleton = 0;
             int numSkeletons = 0;
             Brush userBrush = skeletonBrushes[numSkeletons % skeletonBrushes.Length];
@@ -686,36 +709,41 @@ namespace KinectDataCapture
             byte[] colorPixelData = new byte[kinectSensor.ColorStream.FramePixelDataLength];
             short[] depthPixelData = new short[kinectSensor.DepthStream.FramePixelDataLength];
             Skeleton[] skeletonData = new Skeleton[6];
+            ColorImageFrame colorImageFrame = null;
+            DepthImageFrame depthImageFrame = null;
+            SkeletonFrame skeletonFrame = null;
 
-            using (ColorImageFrame colorImageFrame = e.OpenColorImageFrame())
+            try
             {
-                if (colorImageFrame == null)
-                    return;
-                colorImageFrame.CopyPixelDataTo(colorPixelData);
-            }
+                colorImageFrame = e.OpenColorImageFrame();
+                depthImageFrame = e.OpenDepthImageFrame();
+                skeletonFrame = e.OpenSkeletonFrame();
 
-            using (DepthImageFrame depthImageFrame = e.OpenDepthImageFrame())
+                if (colorImageFrame == null || depthImageFrame == null || skeletonFrame == null)
+                {
+                    return;
+                }
+
+                Faces.sendNewFrames(colorImageFrame, depthImageFrame, skeletonFrame);
+
+            }
+            finally
             {
-                if (depthImageFrame == null)
-                    return;
-                depthImageFrame.CopyPixelDataTo(depthPixelData);
-            }
+                if (colorImageFrame != null)
+                {
+                    colorImageFrame.Dispose();
+                }
 
-            using (SkeletonFrame skeletonFrame = e.OpenSkeletonFrame())
-            {
-                if (skeletonFrame == null)
-                    return;
-                skeletonFrame.CopySkeletonDataTo(skeletonData);
-            }
+                if (depthImageFrame != null)
+                {
+                    depthImageFrame.Dispose();
+                }
 
-            var skeleton = skeletonData.FirstOrDefault(s => s.TrackingState == SkeletonTrackingState.Tracked);
-            if (skeleton == null)
-                return;
-            /*
-            FaceTrackFrame faceFrame = faceTracker.Track(kinectSensor.ColorStream.Format, colorPixelData,
-                                  kinectSensor.DepthStream.Format, depthPixelData,
-                                  skeleton);
-             * */
+                if (skeletonFrame != null)
+                {
+                    skeletonFrame.Dispose();
+                }
+            }
         }
 
         void logVelocity() {
@@ -1214,4 +1242,6 @@ namespace KinectDataCapture
 
 
     }
+
+
 }
