@@ -301,9 +301,8 @@ namespace KinectDataCapture
                 updateAppStatus("Starting logging");
                 resetFramesLogged();
 
-
-                getLoggingDirectory();
-                //curDir = path + "\\" + DateTime.Now.Month + "-" + DateTime.Now.Day + " " + DateTime.Now.Hour + "." + DateTime.Now.Minute + "." + DateTime.Now.Millisecond;
+                //Get new directory for loggging
+                curDir = getLoggingDirectory();
                 loggerQueue = new LoggerQueue(curDir);
 
                 //Start recording audio                
@@ -378,7 +377,7 @@ namespace KinectDataCapture
             kinectSensor.DepthFrameReady += new EventHandler<DepthImageFrameReadyEventArgs>(nui_DepthFrameReady);
             kinectSensor.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>(nui_SkeletonFrameReady);
             kinectSensor.ColorFrameReady += new EventHandler<ColorImageFrameReadyEventArgs>(nui_ColorFrameReady);
-            kinectSensor.AllFramesReady += new EventHandler<AllFramesReadyEventArgs>(nui_AllFramesReady);
+            //kinectSensor.AllFramesReady += new EventHandler<AllFramesReadyEventArgs>(nui_AllFramesReady);
             
         }
 
@@ -555,17 +554,17 @@ namespace KinectDataCapture
 
         void nui_SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
         {
-            //Get skeleton Frame
+            //Open skeleton frame
             SkeletonFrame skeletonFrame = e.OpenSkeletonFrame();
             if (skeletonFrame == null)
             {
                 return;
             }
 
+            //Initialize variables
             int iSkeleton = 0;
             int numSkeletons = 0;
             Brush userBrush = skeletonBrushes[numSkeletons % skeletonBrushes.Length];
-            Polyline figure;
             Skeleton skeleton;
             Brush[] brushes = new Brush[6];
             brushes[0] = new SolidColorBrush(Color.FromRgb(255, 0, 0));
@@ -575,21 +574,20 @@ namespace KinectDataCapture
             brushes[4] = new SolidColorBrush(Color.FromRgb(255, 64, 255));
             brushes[5] = new SolidColorBrush(Color.FromRgb(128, 128, 255));
 
-            Point3f lastHeadPosition = new Point3f { X = 0, Y = 0, Z = 0 };
-            double headDistance = -1;
 
-            Point3f lastSpinePosition = new Point3f { X = 0, Y = 0, Z = 0 };
-            double spineDistance = -1;
-            
-            depthSkelCanvas.Children.Clear();
+
+
+            //Clear tracking state or initialize
             if (curBodyTrackingState != null)
             {
                 curBodyTrackingState.Clear();
             }
-            else { 
-                curBodyTrackingState = new Dictionary<int,Dictionary<Joint,Point3f>>();
+            else
+            {
+                curBodyTrackingState = new Dictionary<int, Dictionary<Joint, Point3f>>();
             }
 
+            //Create Imagebrush for depth image (recording brush to save)
             ImageBrush imageBrush = new ImageBrush(curDepthImage);
             if (!logging)
             {
@@ -599,110 +597,112 @@ namespace KinectDataCapture
             {
                 depthSkelCanvas.Background = recordingBrush;
             }
+
+            //Copy skeleton data
             Skeleton[] skeletonData = new Skeleton[6];
             skeletonFrame.CopySkeletonDataTo(skeletonData);
 
-            if (true)
+            //Clear children
+            depthSkelCanvas.Children.Clear();
+
+            //For each skeleton
+            for (int i = 0; i < skeletonData.Length; i++)
             {
-                //For each skeleton
-                for (int i = 0; i < skeletonData.Length; i++)
+                //Create a dictionary of jointPositions
+                skeleton = skeletonData[i];
+                numSkeletons++;
+                Dictionary<Joint, Point3f> jointPositions = new Dictionary<Joint, Point3f>();
+
+                //If tracking this skeleton
+                if (SkeletonTrackingState.Tracked == skeleton.TrackingState)
                 {
-                    //Create a dictionary of jointPositions
-                    skeleton = skeletonData[i];
-                    numSkeletons++;
-                    Dictionary<Joint, Point3f> jointPositions = new Dictionary<Joint, Point3f>();
-
-                    //If tracking this skeleton
-                    if (SkeletonTrackingState.Tracked == skeleton.TrackingState)
+                    //For each joint, add to joing positions and draw
+                    foreach (Joint joint in skeleton.Joints)
                     {
-
-                        //For each joint
-                        foreach (Joint joint in skeleton.Joints)
+                        if (joint.TrackingState == JointTrackingState.Tracked)
                         {
-                            if (joint.TrackingState == JointTrackingState.Tracked)
-                            {
-                                Point3f jointPoint = new Point3f();
-                                jointPoint.X = joint.Position.X;
-                                jointPoint.Y = joint.Position.Y;
-                                jointPoint.Z = joint.Position.Z;
-                                jointPoint.tracked = true;
-                                jointPoint.time = DateTime.Now;
-                                jointPositions.Add(joint, jointPoint);
+                            addJoint(jointPositions, joint);                            
+                            if (!logging)
+                                drawJoint(depthSkelCanvas, userBrush, joint);
+                        }
+                        else //if not tracked add points anyway??
+                        {                                
+                            addJoint(jointPositions, joint);                                
+                        }
+                    }
 
-                                if (joint.JointType == JointType.Head)
-                                {
-                                    headDistance = Distance3D(jointPoint, lastHeadPosition);
-                                    lastHeadPosition = jointPoint;
-                                }
-                                if (joint.JointType == JointType.Spine)
-                                {
-                                    spineDistance = Distance3D(jointPoint, lastSpinePosition);
-                                    lastSpinePosition = jointPoint;
-                                }
+                    //Draw Stick Figure
+                    if (!logging)
+                    {
+                        drawStickFigure(depthSkelCanvas, userBrush, skeleton);
+                    }
+                    //Add the whole of joint positions to curBodyTrackingState
+                    curBodyTrackingState.Add(iSkeleton, jointPositions);
+                }
+                iSkeleton++;
+            } // for each skeleton
+        
+            logSkeletonJointPositions();
+            logVelocity();
+        //logBodyProximity(headDistance, spineDistance);
+            
+    }
+        
 
-                                //Draw joint
-                                if (!logging)
-                                {
+        
+
+        
+
+private Joint drawJoint(Canvas skeletonCanvas, Brush userBrush, Joint joint)
+{
                                     Point jointPos = GetJointPoint(joint);
                                     Ellipse jointBlob = new Ellipse() { Fill = userBrush, Height = 20, Width = 20 };
                                     Canvas.SetLeft(jointBlob, jointPos.X - 10);
                                     Canvas.SetTop(jointBlob, jointPos.Y - 10);
-                                    depthSkelCanvas.Children.Add(jointBlob);
-                                }
-                                
-
-                            }
-                            else
-                            {
-                                Point3f jointPoint = new Point3f();
-                                jointPoint.X = joint.Position.X;
-                                jointPoint.Y = joint.Position.Y;
-                                jointPoint.Z = joint.Position.Z;
-                                jointPoint.tracked = false;
-                                jointPoint.time = DateTime.Now;
-                                jointPositions.Add(joint, jointPoint);
-                            }
-                        }
-
-                        //Draw stick figure
-
-                        //Draw head and torso
-                        if (!logging)
-                        {
-                            figure = CreateFigure(skeleton, userBrush, new[] { JointType.Head, JointType.ShoulderCenter, JointType.ShoulderLeft, JointType.Spine,
-                                                                                    JointType.ShoulderRight, JointType.ShoulderCenter, JointType.HipCenter
-                                                                                    });
-                            depthSkelCanvas.Children.Add(figure);
-
-                            figure = CreateFigure(skeleton, userBrush, new[] { JointType.HipLeft, JointType.HipRight });
-                            depthSkelCanvas.Children.Add(figure);
-
-                            //Draw left leg
-                            figure = CreateFigure(skeleton, userBrush, new[] { JointType.HipCenter, JointType.HipLeft, JointType.KneeLeft, JointType.AnkleLeft, JointType.FootLeft });
-                            depthSkelCanvas.Children.Add(figure);
-
-                            //Draw right leg
-                            figure = CreateFigure(skeleton, userBrush, new[] { JointType.HipCenter, JointType.HipRight, JointType.KneeRight, JointType.AnkleRight, JointType.FootRight });
-                            depthSkelCanvas.Children.Add(figure);
-
-                            //Draw left arm
-                            figure = CreateFigure(skeleton, userBrush, new[] { JointType.ShoulderLeft, JointType.ElbowLeft, JointType.WristLeft, JointType.HandLeft });
-                            depthSkelCanvas.Children.Add(figure);
-
-                            //Draw right arm
-                            figure = CreateFigure(skeleton, userBrush, new[] { JointType.ShoulderRight, JointType.ElbowRight, JointType.WristRight, JointType.HandRight });
-                            depthSkelCanvas.Children.Add(figure);
-                        }
-                        curBodyTrackingState.Add(iSkeleton, jointPositions);
-                    }
-                    iSkeleton++;
-                } // for each skeleton
-            }
-            logSkeletonJointPositions();
-            logVelocity();
-            //logBodyProximity(headDistance, spineDistance);
+                                    skeletonCanvas.Children.Add(jointBlob);
+return joint;
+}private static Joint addJoint(Dictionary<Joint, Point3f> jointPositions, Joint joint)
+        {
+            //Add joint to JointPositions
+            Point3f jointPoint = new Point3f();
+            jointPoint.X = joint.Position.X;
+            jointPoint.Y = joint.Position.Y;
+            jointPoint.Z = joint.Position.Z;
+            jointPoint.tracked = (joint.TrackingState == JointTrackingState.Tracked);
+            jointPoint.time = DateTime.Now;
+            jointPositions.Add(joint, jointPoint);
+            return joint;
         }
+        
+        private void drawStickFigure(Canvas skeletonCanvas, Brush userBrush, Skeleton skeleton)
+        {
+            Polyline figure;
+            figure = CreateFigure(skeleton, userBrush, new[] { JointType.Head, JointType.ShoulderCenter, JointType.ShoulderLeft, JointType.Spine,
+                                                                    JointType.ShoulderRight, JointType.ShoulderCenter, JointType.HipCenter
+                                                                    });
+            skeletonCanvas.Children.Add(figure);
 
+            figure = CreateFigure(skeleton, userBrush, new[] { JointType.HipLeft, JointType.HipRight });
+            skeletonCanvas.Children.Add(figure);
+
+            //Draw left leg
+            figure = CreateFigure(skeleton, userBrush, new[] { JointType.HipCenter, JointType.HipLeft, JointType.KneeLeft, JointType.AnkleLeft, JointType.FootLeft });
+            skeletonCanvas.Children.Add(figure);
+
+            //Draw right leg
+            figure = CreateFigure(skeleton, userBrush, new[] { JointType.HipCenter, JointType.HipRight, JointType.KneeRight, JointType.AnkleRight, JointType.FootRight });
+            skeletonCanvas.Children.Add(figure);
+
+            //Draw left arm
+            figure = CreateFigure(skeleton, userBrush, new[] { JointType.ShoulderLeft, JointType.ElbowLeft, JointType.WristLeft, JointType.HandLeft });
+            skeletonCanvas.Children.Add(figure);
+
+            //Draw right arm
+            figure = CreateFigure(skeleton, userBrush, new[] { JointType.ShoulderRight, JointType.ElbowRight, JointType.WristRight, JointType.HandRight });
+            skeletonCanvas.Children.Add(figure);
+           
+        }
+        
         void nui_AllFramesReady(object sender, AllFramesReadyEventArgs e)
         {
             // Initialize data arrays
