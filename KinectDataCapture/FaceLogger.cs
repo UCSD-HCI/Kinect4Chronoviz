@@ -31,12 +31,12 @@ namespace KinectDataCapture
 
         public KinectSensor Kinect;
 
-        private Label headPoseStatus;
 
-        public FaceLogger(KinectSensor kinectSensor, Label headPose)
+
+        public FaceLogger(KinectSensor kinectSensor)
         {
             this.Kinect = kinectSensor;
-            this.headPoseStatus = headPose;
+
         }
 
         public struct HeadPose3D
@@ -49,11 +49,8 @@ namespace KinectDataCapture
 
 
 
-        public HeadPose3D sendNewFrames(ColorImageFrame colorImageFrame, DepthImageFrame depthImageFrame, SkeletonFrame skeletonFrame)
+        public void sendNewFrames(ColorImageFrame colorImageFrame, DepthImageFrame depthImageFrame, SkeletonFrame skeletonFrame)
         {
-            HeadPose3D headPose = new HeadPose3D();
-            headPose.valid = false;
-            headPoseStatus.Content = "";
             // Check for image format changes.  The FaceTracker doesn't
             // deal with that so we need to reset.
             if (this.depthImageFormat != depthImageFrame.Format)
@@ -92,6 +89,7 @@ namespace KinectDataCapture
             skeletonFrame.CopySkeletonDataTo(this.skeletonData);
 
             // Update the list of trackers and the trackers with the current frame information
+            this.RemoveOldTrackers(skeletonFrame.FrameNumber);
             foreach (Skeleton skeleton in this.skeletonData)
             {
                 if (skeleton.TrackingState == SkeletonTrackingState.Tracked
@@ -102,26 +100,26 @@ namespace KinectDataCapture
                     {
                         this.trackedSkeletons.Add(skeleton.TrackingId, new SkeletonFaceTracker());
                     }
-
-                    // Give each tracker the upated frame.
-                    SkeletonFaceTracker skeletonFaceTracker;
-                    if (this.trackedSkeletons.TryGetValue(skeleton.TrackingId, out skeletonFaceTracker))
-                    {
-                        headPose = skeletonFaceTracker.OnFrameReady(this.Kinect, colorImageFormat, colorImage, depthImageFormat, depthImage, skeleton);
-                        if (headPose.valid)
-                            headPoseStatus.Content = "(" + Math.Round(headPose.pitch) + "," + Math.Round(headPose.roll) + "," + Math.Round(headPose.yaw) + ")";
-                        else
-                            headPoseStatus.Content = "";
-                        skeletonFaceTracker.LastTrackedFrame = skeletonFrame.FrameNumber;
-                    }
                 }
             }
 
-            this.RemoveOldTrackers(skeletonFrame.FrameNumber);
-            return headPose;
+
         }
 
-        
+        public HeadPose3D getSkeletonHeadPose(Skeleton skeleton, int skelFrameNumber)
+        {
+            HeadPose3D headPose = new HeadPose3D();
+            headPose.valid = false;
+
+            // Give each tracker the upated frame.
+            SkeletonFaceTracker skeletonFaceTracker;
+            if (this.trackedSkeletons.TryGetValue(skeleton.TrackingId, out skeletonFaceTracker))
+            {
+                headPose = skeletonFaceTracker.OnFrameReady(this.Kinect, colorImageFormat, colorImage, depthImageFormat, depthImage, skeleton);
+                skeletonFaceTracker.LastTrackedFrame = skelFrameNumber;
+            }
+            return headPose;
+        }
 
         /// Clear out any trackers for skeletons we haven't heard from for a while
         /// </summary>

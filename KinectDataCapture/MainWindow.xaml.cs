@@ -59,7 +59,7 @@ namespace KinectDataCapture
         LoggerQueue loggerQueue;
         //VideoLogger videoLog;
 
-
+        bool FaceTrackingEnabled = true;
         FaceLogger Faces;
 
         string curDir;
@@ -267,7 +267,7 @@ namespace KinectDataCapture
             initializeVideoStreams();
 
             updateAppStatus("Initializing Face Tracking");
-            Faces = new FaceLogger(newKinect, lblHeadPose);
+            Faces = new FaceLogger(newKinect);
 
             updateAppStatus("Ready to capture");
             newKinect.Start();
@@ -375,9 +375,9 @@ namespace KinectDataCapture
 
 
             kinectSensor.DepthFrameReady += new EventHandler<DepthImageFrameReadyEventArgs>(nui_DepthFrameReady);
-            kinectSensor.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>(nui_SkeletonFrameReady);
+            //kinectSensor.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>(nui_SkeletonFrameReady);
             kinectSensor.ColorFrameReady += new EventHandler<ColorImageFrameReadyEventArgs>(nui_ColorFrameReady);
-            //kinectSensor.AllFramesReady += new EventHandler<AllFramesReadyEventArgs>(nui_AllFramesReady);
+            kinectSensor.AllFramesReady += new EventHandler<AllFramesReadyEventArgs>(nui_AllFramesReady);
             
         }
 
@@ -552,15 +552,41 @@ namespace KinectDataCapture
             return polyline;
         }
 
-        void nui_SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
+        //void nui_SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
+        void nui_AllFramesReady(object sender, AllFramesReadyEventArgs e)
         {
+            bool allFramesGood = false;
+            // Initialize data arrays
+            Skeleton[] skeletonData = new Skeleton[6];
+            ColorImageFrame colorImageFrame = null;
+            DepthImageFrame depthImageFrame = null;
+            SkeletonFrame skeletonFrame = null;
+
             //Open skeleton frame
-            SkeletonFrame skeletonFrame = e.OpenSkeletonFrame();
+            skeletonFrame = e.OpenSkeletonFrame();
             if (skeletonFrame == null)
             {
                 return;
             }
+            if (FaceTrackingEnabled)
+            {
+                colorImageFrame = e.OpenColorImageFrame();
+                depthImageFrame = e.OpenDepthImageFrame();
 
+                if (colorImageFrame == null || depthImageFrame == null || skeletonFrame == null)
+                {
+                    allFramesGood = false;
+                }
+                else
+                {
+                    allFramesGood = true;
+                    Faces.sendNewFrames(colorImageFrame, depthImageFrame, skeletonFrame);
+                }
+
+                
+            }
+
+            
             //Initialize variables
             int iSkeleton = 0;
             int numSkeletons = 0;
@@ -573,9 +599,6 @@ namespace KinectDataCapture
             brushes[3] = new SolidColorBrush(Color.FromRgb(255, 255, 64));
             brushes[4] = new SolidColorBrush(Color.FromRgb(255, 64, 255));
             brushes[5] = new SolidColorBrush(Color.FromRgb(128, 128, 255));
-
-
-
 
             //Clear tracking state or initialize
             if (curBodyTrackingState != null)
@@ -599,7 +622,6 @@ namespace KinectDataCapture
             }
 
             //Copy skeleton data
-            Skeleton[] skeletonData = new Skeleton[6];
             skeletonFrame.CopySkeletonDataTo(skeletonData);
 
             //Clear children
@@ -616,7 +638,7 @@ namespace KinectDataCapture
                 //If tracking this skeleton
                 if (SkeletonTrackingState.Tracked == skeleton.TrackingState)
                 {
-                    //For each joint, add to joing positions and draw
+                    //For each joint, add to joint positions and draw
                     foreach (Joint joint in skeleton.Joints)
                     {
                         if (joint.TrackingState == JointTrackingState.Tracked)
@@ -625,16 +647,29 @@ namespace KinectDataCapture
                             if (!logging)
                                 drawJoint(depthSkelCanvas, userBrush, joint);
                         }
-                        else //if not tracked add points anyway??
+                        else //Add all points so that csv lines up
                         {                                
                             addJoint(jointPositions, joint);                                
+                        }
+                    }
+                    if (FaceTrackingEnabled && allFramesGood)
+                    {
+                        //Get face tracking points
+                        FaceLogger.HeadPose3D headPose = Faces.getSkeletonHeadPose(skeleton, skeletonFrame.FrameNumber);
+                        if (headPose.valid)
+                        {
+                            //add to joints
+                            if (headPose.valid)
+                                lblHeadPose.Content = "(" + Math.Round(headPose.pitch) + "," + Math.Round(headPose.roll) + "," + Math.Round(headPose.yaw) + ")";
+                            else
+                                lblHeadPose.Content = "";                            
                         }
                     }
 
                     //Draw Stick Figure
                     if (!logging)
                     {
-                        drawStickFigure(depthSkelCanvas, userBrush, skeleton);
+                        //drawStickFigure(depthSkelCanvas, userBrush, skeleton);
                     }
                     //Add the whole of joint positions to curBodyTrackingState
                     curBodyTrackingState.Add(iSkeleton, jointPositions);
@@ -703,7 +738,7 @@ return joint;
            
         }
         
-        void nui_AllFramesReady(object sender, AllFramesReadyEventArgs e)
+        void Oldnui_AllFramesReady(object sender, AllFramesReadyEventArgs e)
         {
             // Initialize data arrays
             byte[] colorPixelData = new byte[kinectSensor.ColorStream.FramePixelDataLength];
