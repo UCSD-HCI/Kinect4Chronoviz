@@ -39,7 +39,8 @@ namespace KinectDataCapture
         private Stream audioStream;
         private object lockObj = new object();
         KinectAudioSource audioSource;
-        double curAudioAngle;
+        double curAudioAngle = 0;
+        double curAudioConfidence = 0;
         int curNumPeople;
 
         int totalFrames = 0;
@@ -59,7 +60,7 @@ namespace KinectDataCapture
         LoggerQueue loggerQueue;
         //VideoLogger videoLog;
 
-        bool FaceTrackingEnabled = true;
+        bool FaceTrackingEnabled = false;
         FaceLogger Faces;
 
         string curDir;
@@ -201,7 +202,7 @@ namespace KinectDataCapture
         {
             if (kinectSensor != null)
             {
-                if (nearMode.IsChecked == true)
+                if (chkNearMode.IsChecked == true)
                 {
                     kinectSensor.DepthStream.Range = DepthRange.Near;
                     updateAppStatus("Setting Kinect to Near Mode");
@@ -209,12 +210,32 @@ namespace KinectDataCapture
                 else
                 {
                     kinectSensor.DepthStream.Range = DepthRange.Default;
-                    updateAppStatus("Setting Kinect to Deafault Mode");
+                    updateAppStatus("Setting Kinect to Default Mode");
                 }
             }
             else
             {
-                nearMode.IsChecked = false;  
+                chkNearMode.IsChecked = false;  
+            }
+        }
+        private void setSeatedMode(object sender, RoutedEventArgs e)
+        {
+            if (kinectSensor != null)
+            {
+                if (chkSeatedMode.IsChecked == true)
+                {
+                    kinectSensor.SkeletonStream.TrackingMode = SkeletonTrackingMode.Seated;
+                    updateAppStatus("Setting Skeleton to Seated Mode");
+                }
+                else
+                {
+                    kinectSensor.SkeletonStream.TrackingMode = SkeletonTrackingMode.Default;
+                    updateAppStatus("Setting Skeleton to Default Mode");
+                }
+            }
+            else
+            {
+                chkSeatedMode.IsChecked = false;
             }
         }
 
@@ -527,6 +548,11 @@ namespace KinectDataCapture
 
             curDepthImage = depthImage;
 
+            //Save audio at each depthFrame
+            string info = curAudioAngle + "," + curAudioConfidence;
+            if (logging)
+                loggerQueue.addToQueue(audioAngleFileName, info);
+
         }
 
 
@@ -660,16 +686,16 @@ namespace KinectDataCapture
                         {
                             //add to joints
                             if (headPose.valid)
-                                lblHeadPose.Content = "(" + Math.Round(headPose.pitch) + "," + Math.Round(headPose.roll) + "," + Math.Round(headPose.yaw) + ")";
+                                lblHeadPose.Content = "Head Pose: (" + Math.Round(headPose.pitch) + "," + Math.Round(headPose.roll) + "," + Math.Round(headPose.yaw) + ")";
                             else
-                                lblHeadPose.Content = "";                            
+                                lblHeadPose.Content = "Head Pose: ";                            
                         }
                     }
 
                     //Draw Stick Figure
                     if (!logging)
                     {
-                        //drawStickFigure(depthSkelCanvas, userBrush, skeleton);
+                        drawStickFigure(depthSkelCanvas, userBrush, skeleton);
                     }
                     //Add the whole of joint positions to curBodyTrackingState
                     curBodyTrackingState.Add(iSkeleton, jointPositions);
@@ -1187,10 +1213,8 @@ return joint;
 
         void audioSource_SoundAngleChanged(object sender, SoundSourceAngleChangedEventArgs e)
         {
-            
-            string info = e.Angle + "," + e.ConfidenceLevel;
-            if (logging)
-                loggerQueue.addToQueue(audioAngleFileName, info);
+            curAudioAngle = e.Angle;
+            curAudioConfidence = e.ConfidenceLevel;
         }
 
 

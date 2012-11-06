@@ -54,11 +54,14 @@
             <StackPanel Height="140" Name="stackPanel1" Width="200" Margin="0,0,0,60">
                 <ComboBox Height="23" Name="kinectChooser" Width="200" Margin="0,0,0,5" />
                 <Button Content="Select Kinect" Height="23" Name="btnSelectKinect" Width="200" Margin="0,0,0,5" Click="selectKinect_Click" />
-                <CheckBox Height="23" Name="nearMode" Content="   Enable Near Mode" Width="190" Margin="10,0,0,5" Checked="setNearMode" Unchecked="setNearMode"/>
-                <Button Width="200" Height="50" Name="startButton" Click="startButton_Click" Content="Start Logging"></Button>
+                <CheckBox Height="20" Name="chkNearMode" Content="   Enable Near Mode" Width="190" Margin="10,0,0,5" Checked="setNearMode" Unchecked="setNearMode"/>
+                <CheckBox Height="20" Name="chkSeatedMode" Content="   Enable Seated Mode" Width="190" Margin="10,0,0,5" Checked="setSeatedMode" Unchecked="setSeatedMode"/>
+                <Button Width="200" Height="30" Name="startButton" Click="startButton_Click" Content="Start Logging"></Button>
             </StackPanel>
-            <Label FontSize="14" Name="nofFrames" Focusable="False" Content="Frames logged:    0" Margin="20,20,20,0" Width="200" Height="52" BorderThickness="10" />
-            <Label Height="25" Name="lblHeadPose" Width="132" />
+            <StackPanel Height="140" Name="stackPanel2" Width="400" Margin="0,0,0,60">
+                <Label FontSize="14" Height="25" Name="lblHeadPose" Width="200" Content="Head Pose:   " Margin="20,20,20,0" HorizontalAlignment="Left" />
+                <Label FontSize="14" Name="nofFrames" Focusable="False" Content="Frames logged:    0" Margin="20,60,20,0" Width="200" Height="30" HorizontalAlignment="Left" />
+            </StackPanel>
         </StackPanel>
     </StackPanel>
 </Window>
