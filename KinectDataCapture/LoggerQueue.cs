@@ -108,7 +108,12 @@ namespace KinectDataCapture
             if (fileName.Contains(MainWindow.appStatusFileName)) {
                 columnHeader = "Time,StatusMessage";            
             }
-            else if(fileName.Contains(MainWindow.audioAngleFileName)){
+            if (fileName.Contains(MainWindow.headTrackingFileName))
+            {
+                columnHeader = "Time,Pitch,Roll,Yaw";
+            }
+            else if (fileName.Contains(MainWindow.audioAngleFileName))
+            {
                 columnHeader = "Time,AudioAngle,AudioConfidence";                        
             }
             else if(fileName.Contains(MainWindow.audioStateFileName)){

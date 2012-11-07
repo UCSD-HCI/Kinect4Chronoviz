@@ -32,9 +32,13 @@ namespace KinectDataCapture
 
         public BitmapSource curDepthImage;
         public DepthImageFrame curDepthPlanarImage;
+        public CoordinateMapper coordMap;
+        public DepthImageFormat depthImageFormat = DepthImageFormat.Resolution320x240Fps30;
+
         public string DeviceId;
         /*FaceDetection faceDetection; */
 
+        /* --- AUDIO RELATED STATE --- */
         private string wavFilename;
         private Stream audioStream;
         private object lockObj = new object();
@@ -60,22 +64,26 @@ namespace KinectDataCapture
         LoggerQueue loggerQueue;
         //VideoLogger videoLog;
 
-        bool FaceTrackingEnabled = false;
+        /* -- FACE TRACKING STATE --- */
+        bool FaceTrackingEnabled = true;
         FaceLogger Faces;
 
+        public SkeletonTrackingMode skeletonTrackingMode { get; set; }
+
         string curDir;
-        public const string appStatusFileName = "appStatus.txt";
-        public const string audioAngleFileName = "audioAngle.txt";
-        public const string audioStateFileName = "audioState.txt";
-        public const string audioRecordingFilename = "audioRecording.txt";
-        public const string speechRecognitionFileName = "speechRecognition.txt";
-        public const string depthTrackingFileName = "_depthTracking.txt";
-        public const string bodyTrackingFileName = "_bodyTracking.txt";
-        public const string jointVelocityFileName = "_jointVeloicty.txt";
-        public const string jointAccelerationFileName = "_jointAcceleration.txt";
-        public const string twoBodyProximityFileName = "twoBodyProximity.txt";
-        public const string faceTrackingDepthFileName = "faceTrackingDepth.txt";
-        public const string colorImagesFileName = "colorImages.txt";
+        public const string appStatusFileName = "appStatus.csv";
+        public const string audioAngleFileName = "audioAngle.csv";
+        public const string audioStateFileName = "audioState.csv";
+        public const string audioRecordingFilename = "audioRecording.csv";
+        public const string speechRecognitionFileName = "speechRecognition.csv";
+        public const string depthTrackingFileName = "_depthTracking.csv";
+        public const string bodyTrackingFileName = "_bodyTracking.csv";
+        public const string headTrackingFileName = "_headTracking.csv";
+        public const string jointVelocityFileName = "_jointVeloicty.csv";
+        public const string jointAccelerationFileName = "_jointAcceleration.csv";
+        public const string twoBodyProximityFileName = "twoBodyProximity.csv";
+        public const string faceTrackingDepthFileName = "faceTrackingDepth.csv";
+        public const string colorImagesFileName = "colorImages.csv";
 
         Brush[] skeletonBrushes = new Brush[] { Brushes.Indigo, Brushes.DodgerBlue, Brushes.Purple, Brushes.Pink, Brushes.Goldenrod, Brushes.Crimson };
 
@@ -226,11 +234,14 @@ namespace KinectDataCapture
                 {
                     kinectSensor.SkeletonStream.TrackingMode = SkeletonTrackingMode.Seated;
                     updateAppStatus("Setting Skeleton to Seated Mode");
+                    skeletonTrackingMode = SkeletonTrackingMode.Seated;
+
                 }
                 else
                 {
                     kinectSensor.SkeletonStream.TrackingMode = SkeletonTrackingMode.Default;
                     updateAppStatus("Setting Skeleton to Default Mode");
+                    skeletonTrackingMode = SkeletonTrackingMode.Default;
                 }
             }
             else
@@ -345,8 +356,7 @@ namespace KinectDataCapture
             else {
                 updateAppStatus("\nStopped logging");
                 
-                //Stop recording Video;
-                //videoLog.StopRecording();
+                moveImageInfoFile();
 
                 if (loggerQueue != null)
                 {
@@ -360,6 +370,15 @@ namespace KinectDataCapture
                 logging = false;
                 IsAudioRecording = false;
             }
+        }
+
+        private void moveImageInfoFile()
+        {
+            string sourceFile = System.IO.Path.Combine(curDir, colorImagesFileName);
+            string destFile = curDir + "\\frames\\depth\\depth" + colorImagesFileName;
+            System.IO.File.Copy(sourceFile, destFile, true);
+            destFile = curDir + "\\frames\\rgb\\rgb" + colorImagesFileName;
+            System.IO.File.Copy(sourceFile, destFile, true);
         }
 
         private string getLoggingDirectory()
@@ -385,10 +404,12 @@ namespace KinectDataCapture
         {
             kinectSensor.ColorStream.Enable();
 
-            kinectSensor.DepthStream.Enable(DepthImageFormat.Resolution320x240Fps30);
+            
+            kinectSensor.DepthStream.Enable(depthImageFormat);
 
             kinectSensor.SkeletonStream.Enable();
 
+            coordMap = new CoordinateMapper(kinectSensor);
 
             kinectSensor.Start();
 
@@ -678,6 +699,11 @@ namespace KinectDataCapture
                             addJoint(jointPositions, joint);                                
                         }
                     }
+                    //Draw Stick Figure
+                    if (!logging)
+                    {
+                        drawStickFigure(depthSkelCanvas, userBrush, skeleton, skeletonTrackingMode);
+                    }
                     if (FaceTrackingEnabled && allFramesGood)
                     {
                         //Get face tracking points
@@ -688,15 +714,19 @@ namespace KinectDataCapture
                             if (headPose.valid)
                                 lblHeadPose.Content = "Head Pose: (" + Math.Round(headPose.pitch) + "," + Math.Round(headPose.roll) + "," + Math.Round(headPose.yaw) + ")";
                             else
-                                lblHeadPose.Content = "Head Pose: ";                            
+                                lblHeadPose.Content = "Head Pose: ";
+                            
+                            string dataString = headPose.pitch + "," + headPose.roll + "," + headPose.yaw;
+                            if (logging)
+                                loggerQueue.addToQueue("" + (iSkeleton + 1) + headTrackingFileName, dataString);
+                            else
+                            {
+                                drawHeadPosition(depthSkelCanvas, userBrush, skeleton, headPose);
+                            }
                         }
                     }
 
-                    //Draw Stick Figure
-                    if (!logging)
-                    {
-                        drawStickFigure(depthSkelCanvas, userBrush, skeleton);
-                    }
+
                     //Add the whole of joint positions to curBodyTrackingState
                     curBodyTrackingState.Add(iSkeleton, jointPositions);
                 }
@@ -704,25 +734,18 @@ namespace KinectDataCapture
             } // for each skeleton
         
             logSkeletonJointPositions();
-            logVelocity();
+            //logVelocity();
         //logBodyProximity(headDistance, spineDistance);
             
     }
-        
 
-        
 
-        
 
-private Joint drawJoint(Canvas skeletonCanvas, Brush userBrush, Joint joint)
-{
-                                    Point jointPos = GetJointPoint(joint);
-                                    Ellipse jointBlob = new Ellipse() { Fill = userBrush, Height = 20, Width = 20 };
-                                    Canvas.SetLeft(jointBlob, jointPos.X - 10);
-                                    Canvas.SetTop(jointBlob, jointPos.Y - 10);
-                                    skeletonCanvas.Children.Add(jointBlob);
-return joint;
-}private static Joint addJoint(Dictionary<Joint, Point3f> jointPositions, Joint joint)
+
+
+
+
+        private static Joint addJoint(Dictionary<Joint, Point3f> jointPositions, Joint joint)
         {
             //Add joint to JointPositions
             Point3f jointPoint = new Point3f();
@@ -734,24 +757,43 @@ return joint;
             jointPositions.Add(joint, jointPoint);
             return joint;
         }
-        
-        private void drawStickFigure(Canvas skeletonCanvas, Brush userBrush, Skeleton skeleton)
+
+        private Joint drawJoint(Canvas skeletonCanvas, Brush userBrush, Joint joint)
+        {
+            Point jointPos = getJointPoint(joint);
+            Ellipse jointBlob = new Ellipse() { Fill = userBrush, Height = 20, Width = 20 };
+            Canvas.SetLeft(jointBlob, jointPos.X - 10);
+            Canvas.SetTop(jointBlob, jointPos.Y - 10);
+            skeletonCanvas.Children.Add(jointBlob);
+            return joint;
+        }
+
+        private void drawHeadPosition(Canvas skeletonCanvas, Brush userBrush, Skeleton skeleton, FaceLogger.HeadPose3D headPose)
+        {
+            Polyline figure = new Polyline();
+
+            figure.StrokeThickness = 8;
+            figure.Stroke = new SolidColorBrush(System.Windows.Media.Colors.YellowGreen);
+            
+            //Get head
+            double radius = 150;
+            Point headLocation = getJointPoint(skeleton.Joints[JointType.Head]);            
+            Point PitchLine = new Point(Math.Round(headLocation.X - (headPose.yaw * radius / 90)),
+                                        Math.Round(headLocation.Y - (headPose.pitch * radius / 90)));
+            drawJoint(skeletonCanvas, new SolidColorBrush(System.Windows.Media.Colors.YellowGreen), skeleton.Joints[JointType.Head]);
+            figure.Points.Add(headLocation);
+            figure.Points.Add(PitchLine);
+            skeletonCanvas.Children.Add(figure);
+
+        }
+        private void drawStickFigure(Canvas skeletonCanvas, Brush userBrush, Skeleton skeleton, SkeletonTrackingMode trackingMode)
         {
             Polyline figure;
-            figure = CreateFigure(skeleton, userBrush, new[] { JointType.Head, JointType.ShoulderCenter, JointType.ShoulderLeft, JointType.Spine,
-                                                                    JointType.ShoulderRight, JointType.ShoulderCenter, JointType.HipCenter
-                                                                    });
-            skeletonCanvas.Children.Add(figure);
 
-            figure = CreateFigure(skeleton, userBrush, new[] { JointType.HipLeft, JointType.HipRight });
+            //Draw head and shoulders
+            figure = CreateFigure(skeleton, userBrush, new[] { JointType.Head, JointType.ShoulderCenter, JointType.ShoulderLeft });
             skeletonCanvas.Children.Add(figure);
-
-            //Draw left leg
-            figure = CreateFigure(skeleton, userBrush, new[] { JointType.HipCenter, JointType.HipLeft, JointType.KneeLeft, JointType.AnkleLeft, JointType.FootLeft });
-            skeletonCanvas.Children.Add(figure);
-
-            //Draw right leg
-            figure = CreateFigure(skeleton, userBrush, new[] { JointType.HipCenter, JointType.HipRight, JointType.KneeRight, JointType.AnkleRight, JointType.FootRight });
+            figure = CreateFigure(skeleton, userBrush, new[] { JointType.ShoulderCenter, JointType.ShoulderRight });
             skeletonCanvas.Children.Add(figure);
 
             //Draw left arm
@@ -761,7 +803,30 @@ return joint;
             //Draw right arm
             figure = CreateFigure(skeleton, userBrush, new[] { JointType.ShoulderRight, JointType.ElbowRight, JointType.WristRight, JointType.HandRight });
             skeletonCanvas.Children.Add(figure);
-           
+
+            if (trackingMode != SkeletonTrackingMode.Seated)
+            {
+                //Draw spine
+                figure = CreateFigure(skeleton, userBrush, new[] { JointType.ShoulderCenter, JointType.Spine,  JointType.HipCenter });
+                skeletonCanvas.Children.Add(figure);
+                figure = CreateFigure(skeleton, userBrush, new[] {JointType.ShoulderLeft, JointType.Spine, JointType.ShoulderRight });
+                skeletonCanvas.Children.Add(figure);
+
+                //Draw hip
+                figure = CreateFigure(skeleton, userBrush, new[] { JointType.HipLeft, JointType.HipRight });
+                skeletonCanvas.Children.Add(figure);
+
+                //Draw left leg
+                figure = CreateFigure(skeleton, userBrush, new[] { JointType.HipCenter, JointType.HipLeft, JointType.KneeLeft, JointType.AnkleLeft, JointType.FootLeft });
+                skeletonCanvas.Children.Add(figure);
+
+                //Draw right leg
+                figure = CreateFigure(skeleton, userBrush, new[] { JointType.HipCenter, JointType.HipRight, JointType.KneeRight, JointType.AnkleRight, JointType.FootRight });
+                skeletonCanvas.Children.Add(figure);
+
+
+            }
+
         }
         
         void Oldnui_AllFramesReady(object sender, AllFramesReadyEventArgs e)
@@ -928,8 +993,6 @@ return joint;
                 loggerQueue.addToQueue(skeletonID + bodyTrackingFileName, dataString);
             }
         }
-
-
 
         void nui_ColorFrameReady(object sender, ColorImageFrameReadyEventArgs e)
         {
@@ -1244,16 +1307,18 @@ return joint;
 
             for (int i = 0; i < joints.Length; i++)
             {
-                figure.Points.Add(GetJointPoint(skeleton.Joints[joints[i]]));
+                figure.Points.Add(getJointPoint(skeleton.Joints[joints[i]]));
             }
 
             return figure;
         }
 
 
-        private Point GetJointPoint(Joint joint)
+        private Point getJointPoint(Joint joint)
         {
-            DepthImagePoint point = this.kinectSensor.MapSkeletonPointToDepth(joint.Position, this.kinectSensor.DepthStream.Format);
+
+            DepthImagePoint point = coordMap.MapSkeletonPointToDepthPoint(joint.Position, depthImageFormat);
+            
             point.X *= (int)this.depthSkelCanvas.ActualWidth / kinectSensor.DepthStream.FrameWidth;
             point.Y *= (int)this.depthSkelCanvas.ActualHeight / kinectSensor.DepthStream.FrameHeight;
 
@@ -1300,6 +1365,8 @@ return joint;
 
 
 
+
+        
     }
 
 

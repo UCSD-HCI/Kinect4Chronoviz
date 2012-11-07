@@ -264,8 +264,8 @@ namespace KinectDataCapture
                         //}
                         hp.valid = true;
                         hp.pitch = frame.Rotation.X;
-                        hp.roll = frame.Rotation.Y;
-                        hp.yaw = frame.Rotation.Z;
+                        hp.yaw = frame.Rotation.Y;
+                        hp.roll = frame.Rotation.Z;
                         return hp;
                     }
                 }
