@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-        mc:Ignorable="d" Loaded="Window_Loaded" ResizeMode="CanResize" Height="695" Width="1340" Top="0" Left="0">
-    <StackPanel Height="806">
-        <StackPanel Orientation="Horizontal">
+        mc:Ignorable="d" Loaded="Window_Loaded" ResizeMode="CanResize" Height="739" Width="1331" Top="0" Left="0">
+    <StackPanel Height="700">
+        <StackPanel Orientation="Horizontal" Name="VideoPanels">
             <StackPanel>
                 <TextBox FontSize="18" Focusable="False" BorderThickness="0" Text="RGB Video" HorizontalAlignment="Center" Name="VideoCaption" TextChanged="VideoCaption_TextChanged" />
                 <Canvas Width="640" Height="480" Name="video" Margin="10 0 10 10"/>
@@ -15,52 +15,83 @@
                 <Canvas Width="640" Height="480" Name="depthSkelCanvas" Margin="10 0 10 10" Background="Black" ClipToBounds="True"/>
             </StackPanel>
         </StackPanel>
-        <!-- <StackPanel Orientation="Horizontal">
-            <StackPanel>
-                <TextBox FontSize="14" Name="sampleRateLabel" Margin="10" Focusable="False" BorderThickness="0" Text="Sample Rate:" TextAlignment="Left" HorizontalAlignment="Center" VerticalAlignment="Center" Width="190"/>
-                <Slider Height="23" Name="slider1" Width="150" TickPlacement="BottomRight" />
-                
+        <StackPanel Orientation="Horizontal" Height="200" Width="Auto" Name="optionsPanels">
+            <Grid Width="400" Name="appStatusSection">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Label Grid.Row="0">AppStatus</Label>
+                <TextBox Grid.Row="1" Name="appStatus" Focusable="False" TextAlignment="Left" Width="Auto" ScrollBar.Scroll="appStatus_Scroll" VerticalScrollBarVisibility="Auto" TextChanged="appStatus_TextChanged" Margin="0,0,0,16" />
+            </Grid>
+            <StackPanel Height="184" Name="panel2" Width="275" Margin="10,0,0,60" Orientation="Vertical">
+                <GroupBox Header="Choose Kinect" >
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="180"/>                            
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Grid.Row="0" Content="Select Device:"></Label>
+                        <Label Grid.Column="0" Grid.Row="1" Content="File Prefix:"></Label>                        
+                        <ComboBox Height="23" Name="kinectChooser" Width="Auto" Margin="0,0,0,5" Grid.Column="1" Grid.Row="0" />
+                        <TextBox Height="23" Name="FilenamePrefix" Width="Auto" Text="FRONT" AcceptsReturn="True" Grid.Column="1" Margin="0,0,0,5" Grid.Row="1" />
+                        <Button Content="Select Kinect" Height="23" Name="btnSelectKinect" Width="Auto" Margin="0,0,0,5" Click="selectKinect_Click" Grid.Column="1" Grid.Row="2" />
+                    </Grid>
+                </GroupBox>
             </StackPanel>
-            <StackPanel>
-                <TextBox FontSize="14" Name="tracking" Margin="10" Focusable="False" BorderThickness="0" Text="Body Tracking Details:" TextAlignment="Left" HorizontalAlignment="Center" VerticalAlignment="Center" Width="190"/>
-                <CheckBox Content="Head" Height="20" Name="head" Checked="head_Checked" Margin="5px" IsChecked="True" />
-                <CheckBox Content="Spine" Height="20" Name="spine" Checked="spine_Checked" Margin="5px" IsChecked="True" />
-                <CheckBox Content="Shoulders" Height="20" Name="shoulders" Checked="shoulders_Checked" Margin="5px" IsChecked="True" />
-                <CheckBox Content="Elbows" Height="20" Name="elbows" Checked="elbows_Checked" Margin="5px" />
-                <CheckBox Content="Wrists" Height="20" Name="wrists" Checked="wrists_Checked" Margin="5px"/>
-                <CheckBox Content="Hands" Height="20" Name="hands" Checked="hands_Checked" Margin="5px"/>
-                <CheckBox Content="Hips" Height="20" Name="hips" Checked="hips_Checked" Margin="5px"/>
-                <CheckBox Content="Knees" Height="20" Name="knees" Checked="knees_Checked" Margin="5px"/>
-                <CheckBox Content="Ankles" Height="20" Name="ankles" Checked="ankles_Checked" Margin="5px"/>
-                <CheckBox Content="Feet" Height="20" Name="feet" Checked="feet_Checked" Margin="5px"/>
-            </StackPanel>
-            <StackPanel>
-                <TextBox FontSize="14" Name="speechRecLable" Margin="10" Focusable="False" BorderThickness="0" Text="Speech Detection Details:" TextAlignment="Left" HorizontalAlignment="Center" VerticalAlignment="Center" Width="190"/>
-                <CheckBox Content="Angle of Speech" Height="20" Name="speechAngle" Margin="5px" IsChecked="True" Checked="speechAngle_Checked" />
-                <CheckBox Content="Speech Start and Stop" Height="20" Name="speechState" Margin="5px" IsChecked="True" Checked="speechState_Checked" />
-                <CheckBox Content="Keyword Recognition" Height="20" Name="speechKeyword" Margin="5px" IsChecked="True" Checked="speechKeyword_Checked" />
-            </StackPanel>
-            <StackPanel>
-                <TextBox FontSize="14" Name="advancedLable" Margin="10" Focusable="False" BorderThickness="0" Text="Advanced Options:" TextAlignment="Left" HorizontalAlignment="Center" VerticalAlignment="Center" Width="190"/>
-                <CheckBox Content="Calculate Joint Velocity" Height="20" Name="jointVelocity" Margin="5px" IsChecked="True" Checked="jointVelocity_Checked" />
-                <CheckBox Content="Calculate Joint Acceleration" Height="20" Name="jointAcceleration" Margin="5px" IsChecked="True" Checked="jointAcceleration_Checked" />
-                <CheckBox Content="Calculate Two Body Proximity" Height="20" Name="bodyProximity" Margin="5px" IsChecked="True" Checked="bodyProximity_Checked" />
+            <StackPanel Orientation="Vertical" Name="panel3" Margin="10,0,0,60" Width="300">
+                <GroupBox Header="Mode Options" Name="modeOptionsGbx">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
+
+                        <CheckBox Height="20" Name="chkNearMode" Content="Enable Near Mode" Width="190" Margin="0,0,0,5" Checked="setNearMode" Unchecked="setNearMode" Grid.Row="0" Grid.Column="0"/>
+                        <CheckBox Height="20" Name="chkSeatedMode" Content="Enable Seated Mode" Width="190" Margin="0,0,0,5" Checked="setSeatedMode" Unchecked="setSeatedMode" Grid.Row="1" Grid.Column="0"/>
+                        
+                    </Grid>
+                </GroupBox>
+                <GroupBox Header="Record Options" Name="recordOptionsGbx">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="150"/>
+                           
+                       </Grid.ColumnDefinitions>
+                        <CheckBox Height="20" Name="recordColorChk" Content="Record Color Images" Width="Auto" Margin="0,0,0,5" Checked="setRecordColorImages" Unchecked="setRecordColorImages" Grid.Row="0" Grid.Column="0"/>
+                        <CheckBox Height="20" Name="recordDepthChk" Content="Record Depth Images" Width="Auto" Margin="0,0,0,5" Checked="setRecordDepthImages" Unchecked="setRecordDepthImages" Grid.Row="1" Grid.Column="0"/>
+                        <CheckBox Height="20" Name="recordHeadChk" Content="Record Head Pose" Width="Auto" Margin="0,0,0,5" Checked="setRecordHeadPose" Unchecked="setRecordHeadPose" Grid.Row="0" Grid.Column="1"/>
+                        
+
+                    </Grid>
+                </GroupBox>
             </StackPanel>
-        </StackPanel>
-        -->
-        <StackPanel Orientation="Horizontal" Height="200">
-            <TextBox FontSize="14" Name="appStatus" Margin="10,0,10,70" Focusable="False" BorderThickness="0"  Text="App Status:" TextAlignment="Left" Width="690" Height="135" ScrollBar.Scroll="appStatus_Scroll" VerticalScrollBarVisibility="Auto" TextChanged="appStatus_TextChanged" />
-            <StackPanel Height="140" Name="stackPanel1" Width="200" Margin="0,0,0,60">
-                <ComboBox Height="23" Name="kinectChooser" Width="200" Margin="0,0,0,5" />
-                <Button Content="Select Kinect" Height="23" Name="btnSelectKinect" Width="200" Margin="0,0,0,5" Click="selectKinect_Click" />
-                <CheckBox Height="20" Name="chkNearMode" Content="   Enable Near Mode" Width="190" Margin="10,0,0,5" Checked="setNearMode" Unchecked="setNearMode"/>
-                <CheckBox Height="20" Name="chkSeatedMode" Content="   Enable Seated Mode" Width="190" Margin="10,0,0,5" Checked="setSeatedMode" Unchecked="setSeatedMode"/>
-                <Button Width="200" Height="30" Name="startButton" Click="startButton_Click" Content="Start Logging"></Button>
-            </StackPanel>
-            <StackPanel Height="140" Name="stackPanel2" Width="400" Margin="0,0,0,60">
-                <Label FontSize="14" Height="25" Name="lblHeadPose" Width="200" Content="Head Pose:   " Margin="20,20,20,0" HorizontalAlignment="Left" />
-                <Label FontSize="14" Name="nofFrames" Focusable="False" Content="Frames logged:    0" Margin="20,60,20,0" Width="200" Height="30" HorizontalAlignment="Left" />
+            <StackPanel Height="140" Name="panel4" Width="Auto" Margin="10,0,0,60" >
+                <Button Width="Auto" Height="30" Name="startButton" Click="startButton_Click" Content="Start Logging"></Button>
+                <Label FontSize="14" Height="25" Name="lblHeadPose" Width="200" Content="Head Pose:   "  HorizontalAlignment="Left" />
+                <Label FontSize="14" Name="nofFrames" Focusable="False" Content="Frames logged:    0" Width="200" Height="30" HorizontalAlignment="Left" />
             </StackPanel>
         </StackPanel>
     </StackPanel>

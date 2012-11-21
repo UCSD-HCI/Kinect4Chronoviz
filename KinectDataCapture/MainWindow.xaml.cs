@@ -65,7 +65,11 @@ namespace KinectDataCapture
         //VideoLogger videoLog;
 
         /* -- FACE TRACKING STATE --- */
-        bool FaceTrackingEnabled = true;
+            bool recordHeadPose = true;
+            bool recordColorImages = true;
+            bool recordDepthImages = true;
+
+
         FaceLogger Faces;
 
         public SkeletonTrackingMode skeletonTrackingMode { get; set; }
@@ -175,7 +179,7 @@ namespace KinectDataCapture
 
         private void Window_Loaded(object sender, EventArgs e)
         {
-            //this.WindowState = System.Windows.WindowState.Maximized;
+            DisableOptionsForKinect();
             updateAppStatus("Window loaded");
 
             // Create recording ImageBrush
@@ -184,12 +188,9 @@ namespace KinectDataCapture
             recordingBrush.ImageSource =
                 new BitmapImage(new Uri(@"Recording.jpg", UriKind.Relative));
 
-            //nui = new Runtime();
-            //faceDetection = new FaceDetection(this); 
+ 
 
             // Walk through KinectSensors to find the first one with a Connected status
-            // Walk through KinectSensors to find all
-            
             var availableKinects = (from k in KinectSensor.KinectSensors
                                                where k.Status == KinectStatus.Connected
                                                select k);
@@ -249,7 +250,54 @@ namespace KinectDataCapture
                 chkSeatedMode.IsChecked = false;
             }
         }
-
+        private void setRecordColorImages(object sender, RoutedEventArgs e)
+        {
+            if (!logging)
+            {
+                if (recordColorChk.IsChecked == true)
+                {
+                    updateAppStatus("Enabling recording of color images.");
+                    recordColorImages = true;
+                }
+                else
+                {
+                    updateAppStatus("Disabling recording of color images.");
+                    recordColorImages = false;
+                }
+            }
+        }
+        private void setRecordDepthImages(object sender, RoutedEventArgs e)
+        {
+            if (!logging)
+            {
+                if (recordDepthChk.IsChecked == true)
+                {
+                    updateAppStatus("Enabling recording of depth images.");
+                    recordDepthImages = true;
+                }
+                else
+                {
+                    updateAppStatus("Disabling recording of depth images.");
+                    recordDepthImages = false;
+                }
+            }
+        }
+        private void setRecordHeadPose(object sender, RoutedEventArgs e)
+        {
+            if (!logging)
+            {
+                if (recordHeadChk.IsChecked == true)
+                {
+                    updateAppStatus("Enabling recording of head pose.");
+                    recordHeadPose = true;
+                }
+                else
+                {
+                    updateAppStatus("Disabling recording of head pose.");
+                    recordHeadPose = false;
+                }
+            }
+        }
         private void selectKinect_Click(object sender, RoutedEventArgs e)
         {
             string kinectId = kinectChooser.SelectedValue.ToString();
@@ -270,6 +318,25 @@ namespace KinectDataCapture
                 SetNewKinect(firstKinect);
 
             KinectSensor.KinectSensors.StatusChanged += KinectSensors_StatusChanged;
+
+            EnableOptionsForKinect();
+        }
+
+        private void DisableOptionsForKinect()
+        {
+            chkNearMode.IsEnabled = false;
+            chkSeatedMode.IsEnabled = false;
+            recordDepthChk.IsEnabled = false;
+            recordColorChk.IsEnabled = false;
+            recordHeadChk.IsEnabled = false;
+        }
+        private void EnableOptionsForKinect()
+        {
+            chkNearMode.IsEnabled = true;
+            chkSeatedMode.IsEnabled = true;
+            recordDepthChk.IsEnabled = true;
+            recordColorChk.IsEnabled = true;
+            recordHeadChk.IsEnabled = true;
         }
 
         private void SetNewKinect(KinectSensor newKinect)
@@ -325,6 +392,12 @@ namespace KinectDataCapture
         }
         private void startButton_Click(object sender, RoutedEventArgs e)
         {
+
+            if (kinectSensor == null)
+            {
+                updateAppStatus("Please select a kinect device first.");
+                return;
+            }
             updateAppStatus("Capturing data");
 
             //should make capture settings on UI non-modifyable after this point
@@ -375,10 +448,17 @@ namespace KinectDataCapture
         private void moveImageInfoFile()
         {
             string sourceFile = System.IO.Path.Combine(curDir, colorImagesFileName);
-            string destFile = curDir + "\\frames\\depth\\depth" + colorImagesFileName;
-            System.IO.File.Copy(sourceFile, destFile, true);
-            destFile = curDir + "\\frames\\rgb\\rgb" + colorImagesFileName;
-            System.IO.File.Copy(sourceFile, destFile, true);
+            string destFile;
+            if (recordDepthImages)
+            {
+                destFile = curDir + "\\frames\\depth\\depth" + colorImagesFileName;
+                System.IO.File.Copy(sourceFile, destFile, true);
+            }
+            if (recordColorImages)
+            {
+                destFile = curDir + "\\frames\\rgb\\rgb" + colorImagesFileName;
+                System.IO.File.Copy(sourceFile, destFile, true);
+            }
         }
 
         private string getLoggingDirectory()
@@ -615,7 +695,7 @@ namespace KinectDataCapture
             {
                 return;
             }
-            if (FaceTrackingEnabled)
+            if (recordHeadPose)
             {
                 colorImageFrame = e.OpenColorImageFrame();
                 depthImageFrame = e.OpenDepthImageFrame();
@@ -704,7 +784,7 @@ namespace KinectDataCapture
                     {
                         drawStickFigure(depthSkelCanvas, userBrush, skeleton, skeletonTrackingMode);
                     }
-                    if (FaceTrackingEnabled && allFramesGood)
+                    if (recordHeadPose && allFramesGood)
                     {
                         //Get face tracking points
                         FaceLogger.HeadPose3D headPose = Faces.getSkeletonHeadPose(skeleton, skeletonFrame.FrameNumber);
@@ -1025,14 +1105,12 @@ namespace KinectDataCapture
                 //videoLog.AddFrame(source);
             }
 
-            if ((DateTime.Now.Subtract(lastColorFrameSaveTime)).Milliseconds > colorFrameSaveRate)
+            if ((DateTime.Now.Subtract(lastColorFrameSaveTime)).TotalMilliseconds > colorFrameSaveRate)
             {
                 if (logging)
                 {
                     addFrameLogged();
-                    //BitmapSource bmapSource = BitmapSource.Create(colorFrame.Width, colorFrame.Height, 96, 96, PixelFormats.Bgr32, null, Image, colorFrame.Width * colorFrame.BytesPerPixel);
                     saveColorFrameToJpg(source);
-                    //BitmapSource bmapSource = BitmapSource.Create(colorFrame.Width, colorFrame.Height, 96, 96, PixelFormats.Bgr32, null, Image, colorFrame.Width * colorFrame.BytesPerPixel);
                     saveDepthFrameToJpg(curDepthImage);
 
                     lastColorFrameSaveTime = DateTime.Now;
@@ -1043,7 +1121,7 @@ namespace KinectDataCapture
 
         void saveColorFrameToJpg(BitmapSource image) {
 
-            if (!logging)
+            if ((!logging) || (!recordColorImages))
                 return;
 
             int width = 128;
@@ -1074,7 +1152,7 @@ namespace KinectDataCapture
         void saveDepthFrameToJpg(BitmapSource image)
         {
 
-            if (!logging)
+            if ((!logging) || (!recordDepthImages))
                 return;
 
             int width = 128;

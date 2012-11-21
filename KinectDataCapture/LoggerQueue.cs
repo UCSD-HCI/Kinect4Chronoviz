@@ -70,13 +70,12 @@ namespace KinectDataCapture
                 if (queue.Count > 0)
                 {
                     queueItem nextItem = queue[0];
-                    if (nextItem.fileName != null)
+                    if ((nextItem.fileName != null) && (nextItem.time.Subtract(startingTime).TotalMilliseconds > 0))
                     {
                         lock (lockLogger)
                         {
                             writer = File.AppendText(nextItem.fileName);
-                            writer.WriteLine(nextItem.time.Subtract(startingTime) + "," + nextItem.toWrite);
-                            //writer.Flush();
+                            writer.WriteLine(nextItem.time.Subtract(startingTime) + "," + nextItem.toWrite);                            
                             writer.Close();
                         }
                     }
