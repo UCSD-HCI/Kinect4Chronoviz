@@ -13,7 +13,7 @@ namespace KinectDataCapture
         StreamWriter writer;
         List<queueItem> queue;
         DateTime startingTime;
-        string dir;
+        
         Thread t;
         private object lockLogger = new object();
 
@@ -29,12 +29,10 @@ namespace KinectDataCapture
         
         }
 
-        public LoggerQueue(string dir_arg) {
+        public LoggerQueue() {
             startingTime = DateTime.Now;
             queue = new List<queueItem>();
 
-            dir = dir_arg;
-            Directory.CreateDirectory(dir);
 
             t = new Thread(new ThreadStart(startQueue));
             t.SetApartmentState(ApartmentState.STA);
@@ -47,21 +45,24 @@ namespace KinectDataCapture
 
             queueItem newItem = new queueItem();
             newItem.time = DateTime.Now;
-            newItem.fileName = dir + "\\" + fileName_arg;
+            newItem.fileName = fileName_arg;
             newItem.toWrite = strToAdd_arg;
+            queue.Add(newItem);
+        }
 
-            if (!File.Exists(newItem.fileName))
+        public void addNewFile(string fullFilename, string header)
+        {
+            if (!File.Exists(fullFilename))
             {
                 lock (lockLogger)
                 {
-                    writer = File.CreateText(newItem.fileName);
-                    writer.WriteLine(getColumnHeader(newItem.fileName));
+                    writer = File.CreateText(fullFilename);
+                    writer.WriteLine(header);
                     writer.Close();
                 }
             }
-
-            queue.Add(newItem);
         }
+
 
         void startQueue() {
 
@@ -101,53 +102,7 @@ namespace KinectDataCapture
                 t.Abort();
         }
 
-        string getColumnHeader(string fileName) {
 
-            string columnHeader = "";
-            if (fileName.Contains(MainWindow.appStatusFileName)) {
-                columnHeader = "Time,StatusMessage";            
-            }
-            if (fileName.Contains(MainWindow.headTrackingFileName))
-            {
-                columnHeader = "Time,Pitch,Roll,Yaw";
-            }
-            else if (fileName.Contains(MainWindow.audioAngleFileName))
-            {
-                columnHeader = "Time,AudioAngle,AudioConfidence";                        
-            }
-            else if(fileName.Contains(MainWindow.audioStateFileName)){
-                columnHeader = "Time,SpeechState,AudioAngle";            
-            }
-            else if (fileName.Contains(MainWindow.audioRecordingFilename))
-            {
-                columnHeader = "Time,Filename";
-            }
-            else if(fileName.Contains(MainWindow.speechRecognitionFileName)){
-                columnHeader = "Time,Speech Recognized";            
-            }
-            else if(fileName.Contains(MainWindow.depthTrackingFileName)){
-                columnHeader = "Time,MinDepth,MaxDepth";
-            }
-            else if(fileName.Contains(MainWindow.bodyTrackingFileName)){
-                columnHeader = "Time,HipCenterX,HipCenterY,HipCenterZ,SpineX,SpineY,SpineZ,ShoulderCenterX,ShoulderCenterY,ShoulderCenterZ,HeadX,HeadY,HeadZ,ShoulderLeftX,ShoulderLeftY,ShoulderLeftZ,ElbowLeftX,ElbowLeftY,ElbowLeftZ,WristLeftX,WristLeftY,WristLeftZ,HandLeftX,HandLeftY,HandLeftZ,ShoulderRightX,ShoulderRightY,ShoulderRightZ,ElbowRightX,ElbowRightY,ElbowRightZ,WristRightX,WristRightY,WristRightZ,HandRightX,HandRightY,HandRightZ,HipLeftX,HipLeftY,HipLeftZ,KneeLeftX,KneeLeftY,KneeLeftZ,AnkleLeftX,AnkleLeftY,AnkleLeftZ,FootLeftX,FootLeftY,FootLeftZ,HipRightX,HipRightY,HipRightZ,KneeRightX,KneeRightY,KneeRightZ,AnkleRightX,AnkleRightY,AnkleRightZ,FootRightX,FootRightY,FootRightZ,";
-            }
-
-            else if (fileName.Contains(MainWindow.twoBodyProximityFileName)) {
-                columnHeader = "Time,HeadDistance,SpineDistance";
-            }
-            else if (fileName.Contains(MainWindow.jointVelocityFileName)) {
-                columnHeader = "Time,HipCenter,Spine,ShoulderCenter,Head,ShoulderLeft,ElbowLeft,WristLeft,HandLeft,ShoulderRight,ElbowRight,WristRight,HandRight,HipLeft,KneeLeft,AnkleLeft,FootLeft,HipRight,KneeRight,AnkleRight,FootRight,";
-            }
-            else if (fileName.Contains(MainWindow.faceTrackingDepthFileName)) {
-                columnHeader = "Time,CentroidX,CentroidY,Depth,Player";
-            }
-            else if (fileName.Contains(MainWindow.colorImagesFileName))
-            {
-                columnHeader = "Time,FileName";
-            }
-            return columnHeader;
-
-        }
 
     }
 }

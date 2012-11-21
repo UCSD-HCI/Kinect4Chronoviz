@@ -129,6 +129,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="FaceLogger.cs" />
+    <Compile Include="LogFileManager.cs" />
     <Compile Include="RecorderHelper.cs" />
     <Compile Include="VideoLogger.cs" />
     <Compile Include="VocabularyParser.cs" />

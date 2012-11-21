@@ -40,7 +40,7 @@
                         <Label Grid.Column="0" Grid.Row="0" Content="Select Device:"></Label>
                         <Label Grid.Column="0" Grid.Row="1" Content="File Prefix:"></Label>                        
                         <ComboBox Height="23" Name="kinectChooser" Width="Auto" Margin="0,0,0,5" Grid.Column="1" Grid.Row="0" />
-                        <TextBox Height="23" Name="FilenamePrefix" Width="Auto" Text="FRONT" AcceptsReturn="True" Grid.Column="1" Margin="0,0,0,5" Grid.Row="1" />
+                        <TextBox Height="23" Name="FilePrefixTbx" Width="Auto" Text="FRONT" AcceptsReturn="True" Grid.Column="1" Margin="0,0,0,5" Grid.Row="1" />
                         <Button Content="Select Kinect" Height="23" Name="btnSelectKinect" Width="Auto" Margin="0,0,0,5" Click="selectKinect_Click" Grid.Column="1" Grid.Row="2" />
                     </Grid>
                 </GroupBox>

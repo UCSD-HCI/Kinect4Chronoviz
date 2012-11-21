@@ -161,12 +161,12 @@ namespace KinectDataCapture
 
         void SreSpeechHypothesized(object sender, SpeechHypothesizedEventArgs e)
         {
-            mainWindow.updateSpeechRecognized("Hypothesized="+e.Result.Text +","+e.Result.Confidence);
+            //mainWindow.updateSpeechRecognized("Hypothesized="+e.Result.Text +","+e.Result.Confidence);
         }
 
         void SreSpeechRecognized(object sender, SpeechRecognizedEventArgs e)
         {
-            mainWindow.updateSpeechRecognized(e.Result.Text+","+e.Result.Confidence);
+            //mainWindow.updateSpeechRecognized(e.Result.Text+","+e.Result.Confidence);
             if (e.Result != null)
             {
                 //DumpRecordedAudio(e.Result.Audio);

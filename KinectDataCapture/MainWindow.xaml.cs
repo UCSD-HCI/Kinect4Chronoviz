@@ -36,6 +36,7 @@ namespace KinectDataCapture
         public DepthImageFormat depthImageFormat = DepthImageFormat.Resolution320x240Fps30;
 
         public string DeviceId;
+        private LogFileManager logger;
         /*FaceDetection faceDetection; */
 
         /* --- AUDIO RELATED STATE --- */
@@ -75,19 +76,7 @@ namespace KinectDataCapture
         public SkeletonTrackingMode skeletonTrackingMode { get; set; }
 
         string curDir;
-        public const string appStatusFileName = "appStatus.csv";
-        public const string audioAngleFileName = "audioAngle.csv";
-        public const string audioStateFileName = "audioState.csv";
-        public const string audioRecordingFilename = "audioRecording.csv";
-        public const string speechRecognitionFileName = "speechRecognition.csv";
-        public const string depthTrackingFileName = "_depthTracking.csv";
-        public const string bodyTrackingFileName = "_bodyTracking.csv";
-        public const string headTrackingFileName = "_headTracking.csv";
-        public const string jointVelocityFileName = "_jointVeloicty.csv";
-        public const string jointAccelerationFileName = "_jointAcceleration.csv";
-        public const string twoBodyProximityFileName = "twoBodyProximity.csv";
-        public const string faceTrackingDepthFileName = "faceTrackingDepth.csv";
-        public const string colorImagesFileName = "colorImages.csv";
+
 
         Brush[] skeletonBrushes = new Brush[] { Brushes.Indigo, Brushes.DodgerBlue, Brushes.Purple, Brushes.Pink, Brushes.Goldenrod, Brushes.Crimson };
 
@@ -406,9 +395,9 @@ namespace KinectDataCapture
                 updateAppStatus("Starting logging");
                 resetFramesLogged();
 
-                //Get new directory for loggging
-                curDir = getLoggingDirectory();
-                loggerQueue = new LoggerQueue(curDir);
+                //Create a log file manager
+                logger = new LogFileManager(kinectSensor.DeviceConnectionId, FilePrefixTbx.Text);
+
 
                 //Start recording audio                
                 wavFilename = curDir + "\\audio.wav";
@@ -429,7 +418,7 @@ namespace KinectDataCapture
             else {
                 updateAppStatus("\nStopped logging");
                 
-                moveImageInfoFile();
+                //moveImageInfoFile();
 
                 if (loggerQueue != null)
                 {
@@ -444,7 +433,7 @@ namespace KinectDataCapture
                 IsAudioRecording = false;
             }
         }
-
+        /*
         private void moveImageInfoFile()
         {
             string sourceFile = System.IO.Path.Combine(curDir, colorImagesFileName);
@@ -460,25 +449,8 @@ namespace KinectDataCapture
                 System.IO.File.Copy(sourceFile, destFile, true);
             }
         }
+        */
 
-        private string getLoggingDirectory()
-        {
-            //Create parent directory if it does not exist
-            string path = Environment.GetEnvironmentVariable("userprofile") + "\\Desktop\\Kinect_Logs";
-            if (!Directory.Exists(path))
-                Directory.CreateDirectory(path);
-
-            //Get Device ID name
-            int index = DeviceId.LastIndexOf("\\");
-            string deviceId = DeviceId.Substring(index + 1, DeviceId.Length - index - 1);
-
-            //Build new folder for current logging session MMDDYY HH.MM.SS.mmm
-            string curDir = path + "\\" + deviceId 
-                + "\\" + DateTime.Now.Month + "-" + DateTime.Now.Day + "-" + DateTime.Now.Year + " "
-                + DateTime.Now.Hour + "." + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond;
-
-            return curDir;
-        }
 
         public void initializeVideoStreams()
         {
@@ -594,7 +566,7 @@ namespace KinectDataCapture
                 }
             }
             if (logging) {
-                logDepthData(minDepths,maxDepths);
+                //logDepthData(minDepths,maxDepths);
             }
             return depthFrame32;
         }
@@ -612,7 +584,7 @@ namespace KinectDataCapture
                 if (maxDepths.ContainsKey(player)) {
                     depthData += "," + maxDepths[player];
                 }
-                loggerQueue.addToQueue(player + depthTrackingFileName, depthData);
+                //logger.log(LogFileType.DepthImageFile, player, depthData);
             }
         }
 
@@ -621,7 +593,7 @@ namespace KinectDataCapture
             if (!logging)
                 return;
 
-            loggerQueue.addToQueue(audioRecordingFilename, wavFilename);
+            logger.log(LogFileType.AudioRecordingFile, wavFilename);
         }
 
         void nui_DepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
@@ -652,7 +624,7 @@ namespace KinectDataCapture
             //Save audio at each depthFrame
             string info = curAudioAngle + "," + curAudioConfidence;
             if (logging)
-                loggerQueue.addToQueue(audioAngleFileName, info);
+                logger.log(LogFileType.AudioAngleFile, info);
 
         }
 
@@ -798,7 +770,7 @@ namespace KinectDataCapture
                             
                             string dataString = headPose.pitch + "," + headPose.roll + "," + headPose.yaw;
                             if (logging)
-                                loggerQueue.addToQueue("" + (iSkeleton + 1) + headTrackingFileName, dataString);
+                                logger.log(LogFileType.HeadTrackFile, skeleton.TrackingId, dataString);
                             else
                             {
                                 drawHeadPosition(depthSkelCanvas, userBrush, skeleton, headPose);
@@ -808,7 +780,7 @@ namespace KinectDataCapture
 
 
                     //Add the whole of joint positions to curBodyTrackingState
-                    curBodyTrackingState.Add(iSkeleton, jointPositions);
+                    curBodyTrackingState.Add(skeleton.TrackingId, jointPositions);
                 }
                 iSkeleton++;
             } // for each skeleton
@@ -1017,28 +989,10 @@ namespace KinectDataCapture
                         }
                     }
                 }
-                loggerQueue.addToQueue(skeletonID + jointVelocityFileName, dataString);
                 
             }
             lastBodyTrackingState.Clear();
             lastBodyTrackingState = new Dictionary<int, Dictionary<Joint, Point3f>>(curBodyTrackingState);
-        }
-
-
-        void logBodyProximity(double headDistance, double spineDistance) {
-
-            if (!logging)
-                return;
-
-            string sHeadDistance = "";
-            string sSpineDistance = "";
-
-            if (headDistance != -1) {
-                sHeadDistance = headDistance.ToString();
-                sSpineDistance = spineDistance.ToString();
-            }
-            loggerQueue.addToQueue(twoBodyProximityFileName, sHeadDistance + "," + sSpineDistance + ",");
-
         }
 
 
@@ -1070,7 +1024,7 @@ namespace KinectDataCapture
                     }
                 }
             
-                loggerQueue.addToQueue(skeletonID + bodyTrackingFileName, dataString);
+                logger.log(LogFileType.BodyTrackFile, skeletonID, dataString);
             }
         }
 
@@ -1132,7 +1086,7 @@ namespace KinectDataCapture
             // Define the image palette
             BitmapPalette myPalette = BitmapPalettes.Halftone256;
 
-            string path = curDir + "\\frames\\rgb";
+            string path = logger.getDirectory() + "\\frames\\rgb";
             Directory.CreateDirectory(path);
             string fileName = colorImageNum + ".jpg";
 
@@ -1144,7 +1098,7 @@ namespace KinectDataCapture
             encoder.Frames.Add(BitmapFrame.Create(image));
             encoder.Save(stream);
 
-            loggerQueue.addToQueue(colorImagesFileName, fileName);
+            logger.log(LogFileType.ColorImageFile, fileName);
             colorImageNum++;
         
         }
@@ -1163,7 +1117,7 @@ namespace KinectDataCapture
             // Define the image palette
             BitmapPalette myPalette = BitmapPalettes.Halftone256;
 
-            string path = curDir + "\\frames\\depth";
+            string path = logger.getDirectory() + "\\frames\\depth";
             Directory.CreateDirectory(path);
             string fileName = colorImageNum + ".jpg";
 
@@ -1175,27 +1129,12 @@ namespace KinectDataCapture
             encoder.Frames.Add(BitmapFrame.Create(image));
             encoder.Save(stream);
 
-            loggerQueue.addToQueue(colorImagesFileName, fileName);
+            logger.log(LogFileType.DepthImageFile, fileName);
             colorImageNum++;
 
         }
 
-        void logFaceDepthData(ArrayList faceFrames) {
-            if (!logging)
-                return;
-
-            for (int i = 0; i < faceFrames.Count; i++)
-            {
-                FaceFrame faceFrame = (FaceFrame)faceFrames[i];
-                System.Drawing.Rectangle rect = faceFrame.rect;
-                int centroidX = (rect.X + (rect.Width / 2));
-                int centroidY = (rect.Y + (rect.Height / 2));
-                string faceData = centroidX + "," + centroidY + "," + faceFrame.depth + "," + faceFrame.player;
-                loggerQueue.addToQueue(faceTrackingDepthFileName, faceData);
-
-            }
-        }
-        
+     
 
 
         void sampleImageData(object sender, EventArgs e) {
@@ -1224,21 +1163,14 @@ namespace KinectDataCapture
         public void updateAudioAngle(string angle) {
             if (logging)
             {
-                loggerQueue.addToQueue(audioAngleFileName, angle);
+                logger.log(LogFileType.AudioAngleFile, angle);
             }
         }
 
         public void updateAudioState(string audioState) {
             if (logging)
             {
-                loggerQueue.addToQueue(audioStateFileName, audioState);
-            }
-        }
-
-        public void updateSpeechRecognized(string recognized) {
-            if (logging)
-            {
-                loggerQueue.addToQueue(speechRecognitionFileName, recognized);
+                logger.log(LogFileType.AudioStateFile, audioState);
             }
         }
 
@@ -1246,7 +1178,7 @@ namespace KinectDataCapture
         {
             appStatus.Text += "\n" + status;
             if (logging) {
-                loggerQueue.addToQueue(appStatusFileName, status);
+                logger.log(LogFileType.AppStatusFile, status);
                 appStatus.ScrollToEnd();
             }
         }
@@ -1349,7 +1281,7 @@ namespace KinectDataCapture
 
         private void logAudioRecording(string filename)
         {
-            loggerQueue.addToQueue(audioRecordingFilename, filename);
+            logger.log(LogFileType.AudioRecordingFile, filename);
         }
 
         void audioSource_SoundAngleChanged(object sender, SoundSourceAngleChangedEventArgs e)
