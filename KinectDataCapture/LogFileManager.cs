@@ -154,6 +154,8 @@ namespace KinectDataCapture
                 this.createLogFile(logFileType, false, 0);
             }
             logQueue.addToQueue(filename, logData);
+            if (logFileType == LogFileType.ColorImageFile)
+                generateChronovizTemplate();
         }
 
         string getColumnHeader(LogFileType filetype)
@@ -194,6 +196,35 @@ namespace KinectDataCapture
             }
             return columnHeader;
 
-        }        
+        }
+        public void generateChronovizTemplate()
+        {
+            ChronoVizXML xml = new ChronoVizXML();
+            StreamWriter writer = File.CreateText(directory + "\\" + prefix + ".chronoviztemplate");
+
+            string filename;
+            currentLogFiles.TryGetValue(new Tuple<LogFileType, int>(LogFileType.ColorImageFile, 0), out filename);
+            addLogFileToTemplate(xml, LogFileType.ColorImageFile, filename);
+
+            writer.WriteLine(xml.ToString());
+            writer.Close();            
+        }
+
+        public void addLogFileToTemplate(ChronoVizXML xml, LogFileType type, string filename)
+        {
+
+            Dictionary<ChronoVizXML.DataSetType, Tuple<string, string>> dataSets = new Dictionary<ChronoVizXML.DataSetType, Tuple<string, string>>();
+            switch (type)
+            {
+                case LogFileType.ColorImageFile:
+                    dataSets.Add(ChronoVizXML.DataSetType.DataTypeImageSequence, new Tuple<string, string>("FileName", prefix + "RgbImages"));
+                    xml.addDataSource(ChronoVizXML.DataSourceType.CSVDataSource, filename, dataSets);
+                    break;
+                default:
+                    break;
+
+            }
+
+        }
     }
 }
