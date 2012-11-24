@@ -417,8 +417,8 @@ namespace KinectDataCapture
             }
             else {
                 updateAppStatus("\nStopped logging");
-                
-                //moveImageInfoFile();
+
+                logger.generateChronovizTemplate();
 
                 if (loggerQueue != null)
                 {

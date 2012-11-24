@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Xml;
 
 namespace KinectDataCapture
 {
@@ -103,31 +104,34 @@ namespace KinectDataCapture
             return directory;
         }
 
-        public bool createLogFile(LogFileType filetype, Boolean isNum, int num)
+        //
+        public string createLogFile(LogFileType filetype, Boolean isNum, int num)
         {
             LogFileTypeInfo fileTemplate = new LogFileTypeInfo();
             logFileTemplates.TryGetValue(filetype, out fileTemplate);
-            string newFilename = directory + "\\";
+            string relativeFilename = "";
             if (filetype == LogFileType.ColorImageFile)
             {
-                newFilename += "frames\\rgb\\";
+                relativeFilename += "frames\\rgb\\";
                 Directory.CreateDirectory(directory + "\\frames\\rgb");
             }
             else if (filetype == LogFileType.DepthImageFile)
             {
-                newFilename += "frames\\depth\\";
+                relativeFilename += "frames\\depth\\";
                 Directory.CreateDirectory(directory + "\\frames\\depth");
             }
-            newFilename += prefix + "_";
+            relativeFilename += prefix + "_";
             if (isNum)
             {
-                newFilename += num + "_";
+                relativeFilename += num + "_";
             }
-            newFilename += fileTemplate.basename + "." + fileTemplate.extension;
+            relativeFilename += fileTemplate.basename + "." + fileTemplate.extension;
+
             //TODO check if file exists 
-            currentLogFiles.Add(new Tuple<LogFileType, int>(filetype, num), newFilename);
-            logQueue.addNewFile(newFilename, getColumnHeader(filetype));
-            return true;
+            currentLogFiles.Add(new Tuple<LogFileType, int>(filetype, num), relativeFilename);
+            logQueue.addNewFile(directory + "\\" + relativeFilename, getColumnHeader(filetype));
+
+            return relativeFilename;
         }
         
         public bool createLogFile(LogFileType filetype)
@@ -141,21 +145,23 @@ namespace KinectDataCapture
             string filename;
             if (!currentLogFiles.TryGetValue(new Tuple<LogFileType, int>(logFileType, num), out filename))
             {
-                this.createLogFile(logFileType, true, num);
+                filename = this.createLogFile(logFileType, true, num);
+                
             }
-            logQueue.addToQueue(filename, logData);
+            logQueue.addToQueue(directory + "\\" + filename, logData);
         }
 
+
+        //Log function takes the type and data. If file does not exist is calls create log file.
         public void log(LogFileType logFileType, string logData)
         {
             string filename;
             if (!currentLogFiles.TryGetValue(new Tuple<LogFileType, int>(logFileType, 0), out filename))
             {
-                this.createLogFile(logFileType, false, 0);
+                filename = this.createLogFile(logFileType, false, 0);
+
             }
-            logQueue.addToQueue(filename, logData);
-            if (logFileType == LogFileType.ColorImageFile)
-                generateChronovizTemplate();
+            logQueue.addToQueue(directory + "\\" + filename, logData);
         }
 
         string getColumnHeader(LogFileType filetype)
@@ -174,13 +180,9 @@ namespace KinectDataCapture
             {
                 columnHeader = "Time,AudioAngle,AudioConfidence";
             }
-            else if (filetype == LogFileType.AudioStateFile)
-            {
-                columnHeader = "Time,SpeechState,AudioAngle";
-            }
             else if (filetype == LogFileType.AudioRecordingFile)
             {
-                columnHeader = "Time,Filename";
+                columnHeader = "Time,FileName";
             }
             else if (filetype == LogFileType.DepthTrackFile)
             {
@@ -200,31 +202,126 @@ namespace KinectDataCapture
         public void generateChronovizTemplate()
         {
             ChronoVizXML xml = new ChronoVizXML();
-            StreamWriter writer = File.CreateText(directory + "\\" + prefix + ".chronoviztemplate");
+            string filePath = directory + "\\" + prefix + ".chronoviztemplate";
 
-            string filename;
-            currentLogFiles.TryGetValue(new Tuple<LogFileType, int>(LogFileType.ColorImageFile, 0), out filename);
-            addLogFileToTemplate(xml, LogFileType.ColorImageFile, filename);
+            //string filename;
 
-            writer.WriteLine(xml.ToString());
-            writer.Close();            
+            foreach (KeyValuePair<Tuple<LogFileType, int>, string> kvp in currentLogFiles)
+            {
+                addLogFileToTemplate(xml, kvp.Key.Item1, kvp.Value);
+            }
+
+            xml.saveToFile(filePath);
+            //currentLogFiles.TryGetValue(new Tuple<LogFileType, int>(LogFileType.ColorImageFile, 0), out filename);
+            //addLogFileToTemplate(xml, LogFileType.ColorImageFile, filename);
+            
         }
 
         public void addLogFileToTemplate(ChronoVizXML xml, LogFileType type, string filename)
         {
 
-            Dictionary<ChronoVizXML.DataSetType, Tuple<string, string>> dataSets = new Dictionary<ChronoVizXML.DataSetType, Tuple<string, string>>();
+            //Dictionary<ChronoVizDataSet.Type, Tuple<string, string>> dataSets = new Dictionary<ChronoVizDataSet.Type, Tuple<string, string>>();            
+            LinkedList<ChronoVizDataSet> dataSets = new LinkedList<ChronoVizDataSet>();
             switch (type)
             {
                 case LogFileType.ColorImageFile:
-                    dataSets.Add(ChronoVizXML.DataSetType.DataTypeImageSequence, new Tuple<string, string>("FileName", prefix + "RgbImages"));
-                    xml.addDataSource(ChronoVizXML.DataSourceType.CSVDataSource, filename, dataSets);
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.ImageSequence, "FileName", prefix + "RgbImages"));
+                    xml.addDataSource(ChronoVizXML.DataSourceType.CSV, filename, dataSets);
+                    break;
+                case LogFileType.DepthImageFile:
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.ImageSequence, "FileName", prefix + "DepthImages"));
+                    xml.addDataSource(ChronoVizXML.DataSourceType.CSV, filename, dataSets);
+                    break;
+                case LogFileType.AudioAngleFile:
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.ImageSequence, "AudioAngle", prefix + "AudioAngle"));
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.ImageSequence, "AudioConfidence", prefix + "AudioConfidence"));
+                    xml.addDataSource(ChronoVizXML.DataSourceType.CSV, filename, dataSets);
+                    break;
+                case LogFileType.AudioRecordingFile:
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.Audio, "FileName", prefix + "DepthImages"));
+                    xml.addDataSource(ChronoVizXML.DataSourceType.CSV, filename, dataSets);
+                    break;
+                case LogFileType.HeadTrackFile:
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.Audio, "Pitch", prefix + "Pitch"));
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.Audio, "Roll", prefix + "Roll"));
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.Audio, "Yaw", prefix + "Yaw"));
+                    xml.addDataSource(ChronoVizXML.DataSourceType.CSV, filename, dataSets);
+                    break;
+                case LogFileType.BodyTrackFile:
+                    populateBodyDataSets(xml, filename, dataSets);
+                    xml.addDataSource(ChronoVizXML.DataSourceType.CSV, filename, dataSets);
                     break;
                 default:
                     break;
 
             }
 
+        }
+
+
+        private void populateBodyDataSets(ChronoVizXML xml, string filename, LinkedList<ChronoVizDataSet> dataSets)
+        {
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "HipCenterX", prefix + "HipCenterX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "HipCenterY", prefix + "HipCenterY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "HipCenterZ", prefix + "HipCenterZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "SpineX", prefix + "SpineX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "SpineY", prefix + "SpineY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "SpineZ", prefix + "SpineZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "ShoulderCenterX", prefix + "ShoulderCenterX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "ShoulderCenterY", prefix + "ShoulderCenterY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "ShoulderCenterZ", prefix + "ShoulderCenterZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "HeadX", prefix + "HeadX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "HeadY", prefix + "HeadY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "HeadZ", prefix + "HeadZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "ShoulderLeftX", prefix + "ShoulderLeftX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "ShoulderLeftY", prefix + "ShoulderLeftY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "ShoulderLeftZ", prefix + "ShoulderLeftZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "ElbowLeftX", prefix + "ElbowLeftX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "ElbowLeftY", prefix + "ElbowLeftY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "ElbowLeftZ", prefix + "ElbowLeftZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "WristLeftX", prefix + "WristLeftX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "WristLeftY", prefix + "WristLeftY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "WristLeftZ", prefix + "WristLeftZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "HandLeftX", prefix + "HandLeftX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "HandLeftY", prefix + "HandLeftY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "HandLeftZ", prefix + "HandLeftZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "ShoulderRightX", prefix + "ShoulderRightX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "ShoulderRightY", prefix + "ShoulderRightY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "ShoulderRightZ", prefix + "ShoulderRightZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "ElbowRightX", prefix + "ElbowRightX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "ElbowRightY", prefix + "ElbowRightY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "ElbowRightZ", prefix + "ElbowRightZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "WristRightX", prefix + "WristRightX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "WristRightY", prefix + "WristRightY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "WristRightZ", prefix + "WristRightZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "HandRightX", prefix + "HandRightX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "HandRightY", prefix + "HandRightY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "HandRightZ", prefix + "HandRightZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "HipLeftX", prefix + "HipLeftX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "HipLeftY", prefix + "HipLeftY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "HipLeftZ", prefix + "HipLeftZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "KneeLeftX", prefix + "KneeLeftX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "KneeLeftY", prefix + "KneeLeftY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "KneeLeftZ", prefix + "KneeLeftZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "AnkleLeftX", prefix + "AnkleLeftX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "AnkleLeftY", prefix + "AnkleLeftY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "AnkleLeftZ", prefix + "AnkleLeftZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "FootLeftX", prefix + "FootLeftX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "FootLeftY", prefix + "FootLeftY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "FootLeftZ", prefix + "FootLeftZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "HipRightX", prefix + "HipRightX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "HipRightY", prefix + "HipRightY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "HipRightZ", prefix + "HipRightZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "KneeRightX", prefix + "KneeRightX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "KneeRightY", prefix + "KneeRightY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "KneeRightZ", prefix + "KneeRightZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "AnkleRightX", prefix + "AnkleRightX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "AnkleRightY", prefix + "AnkleRightY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "AnkleRightZ", prefix + "AnkleRightZ"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialX, "FootRightX", prefix + "FootRightX"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.SpatialY, "FootRightY", prefix + "FootRightY"));
+            dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "FootRightZ", prefix + "FootRightZ"));
+         
         }
     }
 }
