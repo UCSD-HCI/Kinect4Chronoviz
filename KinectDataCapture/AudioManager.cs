@@ -36,13 +36,13 @@ namespace KinectDataCapture
 
 
             mainWindow = mainWindow_arg;
-            mainWindow.updateAppStatus("AudioManager");
+            mainWindow.UIUpdateAppStatus("AudioManager");
 
             RecognizerInfo ri = SpeechRecognitionEngine.InstalledRecognizers().Where(r => r.Id == RecognizerId).FirstOrDefault();
             if (ri == null)
                 return;
 
-            mainWindow.updateAppStatus("Creating sre");
+            mainWindow.UIUpdateAppStatus("Creating sre");
 
             sre = new SpeechRecognitionEngine(ri.Id);
             //sre = new SpeechRecognitionEngine(new System.Globalization.CultureInfo("en-US"));

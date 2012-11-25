@@ -168,8 +168,7 @@ namespace KinectDataCapture
 
         private void Window_Loaded(object sender, EventArgs e)
         {
-            DisableOptionsForKinect();
-            updateAppStatus("Window loaded");
+            
 
             // Create recording ImageBrush
             recordingBrush = new ImageBrush();
@@ -177,22 +176,58 @@ namespace KinectDataCapture
             recordingBrush.ImageSource =
                 new BitmapImage(new Uri(@"Recording.jpg", UriKind.Relative));
 
- 
-
-            // Walk through KinectSensors to find the first one with a Connected status
+            // Add all kinect sensors to UI
             var availableKinects = (from k in KinectSensor.KinectSensors
                                                where k.Status == KinectStatus.Connected
                                                select k);
             foreach (var kinect in availableKinects)
             {
                 kinectChooser.Items.Add(kinect.DeviceConnectionId.ToString());
-                if (kinectChooser.SelectedValue == null)
-                {
-                    kinectChooser.SelectedIndex = 0;
-                }
             }
-            
+            if (kinectChooser.SelectedValue == null)
+            {
+                kinectChooser.SelectedIndex = 0;
+            }
 
+            UIUpdate();
+            UIUpdateAppStatus("WindowLoaded");
+
+
+        }
+
+        //Propagate change in status from code -> ui
+        private void UIUpdate()
+        {
+            if (kinectSensor == null)
+            {
+                UIEnableSelectionOfKinectOptions(false);
+            }
+            else
+            {
+                UIEnableSelectionOfKinectOptions(true);
+            }
+            if (kinectSensor != null)
+            {
+                if (kinectSensor.DepthStream.Range == DepthRange.Near)
+                {
+                    chkNearMode.IsChecked = true;
+                }
+                else
+                {
+                    chkNearMode.IsChecked = false;
+                }
+                if (kinectSensor.SkeletonStream.TrackingMode == SkeletonTrackingMode.Seated)
+                {
+                    chkSeatedMode.IsChecked = true;
+                }
+                else
+                {
+                    chkSeatedMode.IsChecked = false;
+                }
+                recordColorChk.IsChecked = recordColorImages;
+                recordDepthChk.IsChecked = recordDepthImages;
+                recordHeadChk.IsChecked = recordHeadPose;
+            }
 
         }
 
@@ -203,12 +238,12 @@ namespace KinectDataCapture
                 if (chkNearMode.IsChecked == true)
                 {
                     kinectSensor.DepthStream.Range = DepthRange.Near;
-                    updateAppStatus("Setting Kinect to Near Mode");
+                    UIUpdateAppStatus("Setting Kinect to Near Mode");
                 }
                 else
                 {
                     kinectSensor.DepthStream.Range = DepthRange.Default;
-                    updateAppStatus("Setting Kinect to Default Mode");
+                    UIUpdateAppStatus("Setting Kinect to Default Mode");
                 }
             }
             else
@@ -223,14 +258,14 @@ namespace KinectDataCapture
                 if (chkSeatedMode.IsChecked == true)
                 {
                     kinectSensor.SkeletonStream.TrackingMode = SkeletonTrackingMode.Seated;
-                    updateAppStatus("Setting Skeleton to Seated Mode");
+                    UIUpdateAppStatus("Setting Skeleton to Seated Mode");
                     skeletonTrackingMode = SkeletonTrackingMode.Seated;
 
                 }
                 else
                 {
                     kinectSensor.SkeletonStream.TrackingMode = SkeletonTrackingMode.Default;
-                    updateAppStatus("Setting Skeleton to Default Mode");
+                    UIUpdateAppStatus("Setting Skeleton to Default Mode");
                     skeletonTrackingMode = SkeletonTrackingMode.Default;
                 }
             }
@@ -245,12 +280,12 @@ namespace KinectDataCapture
             {
                 if (recordColorChk.IsChecked == true)
                 {
-                    updateAppStatus("Enabling recording of color images.");
+                    UIUpdateAppStatus("Enabling recording of color images.");
                     recordColorImages = true;
                 }
                 else
                 {
-                    updateAppStatus("Disabling recording of color images.");
+                    UIUpdateAppStatus("Disabling recording of color images.");
                     recordColorImages = false;
                 }
             }
@@ -261,12 +296,12 @@ namespace KinectDataCapture
             {
                 if (recordDepthChk.IsChecked == true)
                 {
-                    updateAppStatus("Enabling recording of depth images.");
+                    UIUpdateAppStatus("Enabling recording of depth images.");
                     recordDepthImages = true;
                 }
                 else
                 {
-                    updateAppStatus("Disabling recording of depth images.");
+                    UIUpdateAppStatus("Disabling recording of depth images.");
                     recordDepthImages = false;
                 }
             }
@@ -277,66 +312,91 @@ namespace KinectDataCapture
             {
                 if (recordHeadChk.IsChecked == true)
                 {
-                    updateAppStatus("Enabling recording of head pose.");
+                    UIUpdateAppStatus("Enabling recording of head pose.");
                     recordHeadPose = true;
                 }
                 else
                 {
-                    updateAppStatus("Disabling recording of head pose.");
+                    UIUpdateAppStatus("Disabling recording of head pose.");
                     recordHeadPose = false;
                 }
             }
         }
+
+        //On click of select Kinect, enables the selected kinect
+
         private void selectKinect_Click(object sender, RoutedEventArgs e)
         {
             string kinectId = kinectChooser.SelectedValue.ToString();
-            KinectSensor firstKinect = null;
+            KinectSensor selectedKinect = null;
+
+            //Get list of available kinects
             var availableKinects = (from k in KinectSensor.KinectSensors
                                     where k.Status == KinectStatus.Connected
                                     select k);
+
+            //Find the one the user selected.
             foreach (var kinect in availableKinects)
             {
                 if (kinect.DeviceConnectionId == kinectId)
                 {
-                    firstKinect = kinect;
+                    selectedKinect = kinect;
                     DeviceId = kinectId;
                 }
             }
 
-            if (firstKinect != null)
-                SetNewKinect(firstKinect);
+            if (selectedKinect != null)
+                SwitchToKinect(selectedKinect);
 
             KinectSensor.KinectSensors.StatusChanged += KinectSensors_StatusChanged;
 
-            EnableOptionsForKinect();
+            
+            UIUpdate();
         }
 
-        private void DisableOptionsForKinect()
+        private void UIEnableSelectionOfKinectOptions(bool isEnabled)
         {
-            chkNearMode.IsEnabled = false;
-            chkSeatedMode.IsEnabled = false;
-            recordDepthChk.IsEnabled = false;
-            recordColorChk.IsEnabled = false;
-            recordHeadChk.IsEnabled = false;
-        }
-        private void EnableOptionsForKinect()
-        {
-            chkNearMode.IsEnabled = true;
-            chkSeatedMode.IsEnabled = true;
-            recordDepthChk.IsEnabled = true;
-            recordColorChk.IsEnabled = true;
-            recordHeadChk.IsEnabled = true;
+            
+            if (isEnabled)
+            {
+                chkNearMode.IsEnabled = true;
+                chkSeatedMode.IsEnabled = true;
+                recordDepthChk.IsEnabled = true;
+                recordColorChk.IsEnabled = true;
+                recordHeadChk.IsEnabled = true;
+                startButton.IsEnabled = true;
+            }
+            else
+            {
+                chkNearMode.IsEnabled = false;
+                chkSeatedMode.IsEnabled = false;
+                recordDepthChk.IsEnabled = false;
+                recordColorChk.IsEnabled = false;
+                recordHeadChk.IsEnabled = false;
+                startButton.IsEnabled = false;
+            }
         }
 
-        private void SetNewKinect(KinectSensor newKinect)
+        
+
+        //Toggles Kinect, can switch from null to new, new to null
+        //and old to new sensor.
+        private void SwitchToKinect(KinectSensor newKinect)
         {
+            //If new sensor is different than current
             if (kinectSensor != newKinect)
             {
+                //If current is not null
                 if (kinectSensor != null)
+                {
+                    //Stop old sensor
                     StopKinect(kinectSensor);
+                }
 
+                //If new is not null
                 if (newKinect != null)
                 {
+                    //Start new sensor
                     kinectSensor = newKinect;
                     OpenKinect(newKinect);
                 }
@@ -347,19 +407,22 @@ namespace KinectDataCapture
 
         private void OpenKinect(KinectSensor newKinect)
         {
-            updateAppStatus("Creating audio manager");
+            UIUpdateAppStatus("Creating audio manager");
             //audioManager = new AudioManager(this);
             audioSource = CreateAudioSource();
 
-            updateAppStatus("Initializing video streams");
+            UIUpdateAppStatus("Initializing video streams");
             initializeVideoStreams();
 
-            updateAppStatus("Initializing Face Tracking");
+            UIUpdateAppStatus("Initializing Face Tracking");
             Faces = new FaceLogger(newKinect);
 
-            updateAppStatus("Ready to capture");
-            newKinect.Start();
+            UIUpdateAppStatus("Initializing Audio Sources");
             audioStream = audioSource.Start();
+
+            newKinect.Start();
+            UIUpdateAppStatus("New Kinect started(" + DeviceId + ")");
+            UIUpdateAppStatus("Ready to capture");
         }
 
         private void StopKinect(KinectSensor oldKinect)
@@ -371,12 +434,12 @@ namespace KinectDataCapture
         {
             if (e.Sensor != null && e.Status == KinectStatus.Connected)
             {
-                SetNewKinect(e.Sensor);
+                SwitchToKinect(e.Sensor);
             }
             else if (e.Sensor == kinectSensor)
             {
                 // The current Kinect isn't connected anymore
-                SetNewKinect(null);
+                SwitchToKinect(null);
             }
         }
         private void startButton_Click(object sender, RoutedEventArgs e)
@@ -384,15 +447,15 @@ namespace KinectDataCapture
 
             if (kinectSensor == null)
             {
-                updateAppStatus("Please select a kinect device first.");
+                UIUpdateAppStatus("Please select a kinect device first.");
                 return;
             }
-            updateAppStatus("Capturing data");
+            UIUpdateAppStatus("Capturing data");
 
             //should make capture settings on UI non-modifyable after this point
             if (!logging)
             {
-                updateAppStatus("Starting logging");
+                UIUpdateAppStatus("Starting logging");
                 resetFramesLogged();
 
                 //Create a log file manager
@@ -416,7 +479,7 @@ namespace KinectDataCapture
                 logging = true;
             }
             else {
-                updateAppStatus("\nStopped logging");
+                UIUpdateAppStatus("\nStopped logging");
 
                 logger.generateChronovizTemplate();
 
@@ -433,24 +496,6 @@ namespace KinectDataCapture
                 IsAudioRecording = false;
             }
         }
-        /*
-        private void moveImageInfoFile()
-        {
-            string sourceFile = System.IO.Path.Combine(curDir, colorImagesFileName);
-            string destFile;
-            if (recordDepthImages)
-            {
-                destFile = curDir + "\\frames\\depth\\depth" + colorImagesFileName;
-                System.IO.File.Copy(sourceFile, destFile, true);
-            }
-            if (recordColorImages)
-            {
-                destFile = curDir + "\\frames\\rgb\\rgb" + colorImagesFileName;
-                System.IO.File.Copy(sourceFile, destFile, true);
-            }
-        }
-        */
-
 
         public void initializeVideoStreams()
         {
@@ -469,7 +514,6 @@ namespace KinectDataCapture
 
 
             kinectSensor.DepthFrameReady += new EventHandler<DepthImageFrameReadyEventArgs>(nui_DepthFrameReady);
-            //kinectSensor.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>(nui_SkeletonFrameReady);
             kinectSensor.ColorFrameReady += new EventHandler<ColorImageFrameReadyEventArgs>(nui_ColorFrameReady);
             kinectSensor.AllFramesReady += new EventHandler<AllFramesReadyEventArgs>(nui_AllFramesReady);
             
@@ -1174,7 +1218,7 @@ namespace KinectDataCapture
             }
         }
 
-        public void updateAppStatus(string status)
+        public void UIUpdateAppStatus(string status)
         {
             appStatus.Text += "\n" + status;
             if (logging) {

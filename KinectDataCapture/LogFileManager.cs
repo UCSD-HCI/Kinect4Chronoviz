@@ -199,28 +199,26 @@ namespace KinectDataCapture
             return columnHeader;
 
         }
+
         public void generateChronovizTemplate()
         {
+            //Create a chronoviz xml
             ChronoVizXML xml = new ChronoVizXML();
             string filePath = directory + "\\" + prefix + ".chronoviztemplate";
 
-            //string filename;
-
+            //Add log files to template
             foreach (KeyValuePair<Tuple<LogFileType, int>, string> kvp in currentLogFiles)
             {
                 addLogFileToTemplate(xml, kvp.Key.Item1, kvp.Value);
             }
 
+            //Save file
             xml.saveToFile(filePath);
-            //currentLogFiles.TryGetValue(new Tuple<LogFileType, int>(LogFileType.ColorImageFile, 0), out filename);
-            //addLogFileToTemplate(xml, LogFileType.ColorImageFile, filename);
-            
+          
         }
 
         public void addLogFileToTemplate(ChronoVizXML xml, LogFileType type, string filename)
         {
-
-            //Dictionary<ChronoVizDataSet.Type, Tuple<string, string>> dataSets = new Dictionary<ChronoVizDataSet.Type, Tuple<string, string>>();            
             LinkedList<ChronoVizDataSet> dataSets = new LinkedList<ChronoVizDataSet>();
             switch (type)
             {
