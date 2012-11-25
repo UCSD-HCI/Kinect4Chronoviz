@@ -52,7 +52,6 @@ namespace KinectDataCapture
 
         private Dictionary<LogFileType, LogFileTypeInfo> logFileTemplates;
         private Dictionary<Tuple<LogFileType, int>, string> currentLogFiles;
-        private static int fileHandleIdx = 0;
         private string directory;
         private string prefix;
         private LoggerQueue logQueue;
@@ -138,6 +137,11 @@ namespace KinectDataCapture
         {
             this.createLogFile(filetype, false, 0);
             return true;
+        }
+
+        public void closeLogs()
+        {
+            logQueue.endLogging();
         }
 
         public void log(LogFileType logFileType, int num, string logData)

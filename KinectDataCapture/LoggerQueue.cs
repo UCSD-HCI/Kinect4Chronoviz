@@ -13,6 +13,7 @@ namespace KinectDataCapture
         StreamWriter writer;
         List<queueItem> queue;
         DateTime startingTime;
+        private Boolean _requestThreadStop;
         
         Thread t;
         private object lockLogger = new object();
@@ -23,16 +24,10 @@ namespace KinectDataCapture
             public string toWrite;
         }
 
-        struct logFileItem {
-            public string logFileName;
-            public LogFile logFile;
-        
-        }
-
         public LoggerQueue() {
             startingTime = DateTime.Now;
             queue = new List<queueItem>();
-
+            _requestThreadStop = false;
 
             t = new Thread(new ThreadStart(startQueue));
             t.SetApartmentState(ApartmentState.STA);
@@ -66,7 +61,7 @@ namespace KinectDataCapture
 
         void startQueue() {
 
-            while (true) {
+            while (!_requestThreadStop) {
 
                 if (queue.Count > 0)
                 {
@@ -99,7 +94,9 @@ namespace KinectDataCapture
                     }
                     queue.Remove(nextItem);
                 }
-                t.Abort();
+                //t.Abort();
+                _requestThreadStop = true;
+
         }
 
 

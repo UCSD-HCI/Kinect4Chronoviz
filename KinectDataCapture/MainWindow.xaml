@@ -7,7 +7,7 @@
     <StackPanel Height="700">
         <StackPanel Orientation="Horizontal" Name="VideoPanels">
             <StackPanel>
-                <TextBox FontSize="18" Focusable="False" BorderThickness="0" Text="RGB Video" HorizontalAlignment="Center" Name="VideoCaption" TextChanged="VideoCaption_TextChanged" />
+                <TextBox FontSize="18" Focusable="False" BorderThickness="0" Text="RGB Video" HorizontalAlignment="Center" Name="VideoCaption" />
                 <Canvas Width="640" Height="480" Name="video" Margin="10 0 10 10"/>
             </StackPanel>
             <StackPanel>
@@ -22,7 +22,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <Label Grid.Row="0">AppStatus</Label>
-                <TextBox Grid.Row="1" Name="appStatus" Focusable="False" TextAlignment="Left" Width="Auto" ScrollBar.Scroll="appStatus_Scroll" VerticalScrollBarVisibility="Auto" TextChanged="appStatus_TextChanged" Margin="0,0,0,16" />
+                <TextBox Grid.Row="1" Name="appStatus" Focusable="False" TextAlignment="Left" Width="Auto" VerticalScrollBarVisibility="Auto" TextChanged="appStatus_TextChanged" Margin="0,0,0,16" />
             </Grid>
             <StackPanel Height="184" Name="panel2" Width="275" Margin="10,0,0,60" Orientation="Vertical">
                 <GroupBox Header="Choose Kinect" >

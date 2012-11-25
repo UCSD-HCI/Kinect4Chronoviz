@@ -30,6 +30,7 @@ class RecorderHelper
         var size = 0; 
         //write wav header placeholder
         WriteWavHeader(fileStream, size);
+        Debug.WriteLine("Wrote Waveheader");
         //using (var audioStream = source.Start())
         
         {
@@ -40,6 +41,7 @@ class RecorderHelper
                 size += buffer.Length;
 
             }
+            Debug.WriteLine("Completed Wavechunks");
         }
 
         //write real wav header
@@ -48,6 +50,7 @@ class RecorderHelper
         WriteWavHeader(fileStream, size);
         fileStream.Seek(prePosition, SeekOrigin.Begin);
         fileStream.Flush();
+        Debug.WriteLine("Wrote Read Waveheader and flushed.");
     }
 
     public static void WriteWavHeader(Stream stream, int dataLength)

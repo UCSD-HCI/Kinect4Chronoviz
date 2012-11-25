@@ -31,6 +31,9 @@ namespace KinectDataCapture
 
         public KinectSensor Kinect;
 
+        int faceDetectionSampleRate = 500; //milliseconds
+        
+        DateTime lastFaceDetectionSample;
 
 
         public FaceLogger(KinectSensor kinectSensor)
@@ -270,13 +273,6 @@ namespace KinectDataCapture
                     }
                 }
                 return hp;
-            }
-
-            private struct FaceModelTriangle
-            {
-                public Point P1;
-                public Point P2;
-                public Point P3;
             }
         }
     }

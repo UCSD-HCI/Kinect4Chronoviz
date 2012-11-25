@@ -21,21 +21,26 @@ namespace KinectDataCapture
     public partial class MainWindow : Window
     {
 
+        /* --- APPLICATION STATE --- */
+        bool logging = false;
+
+        //Kinect variables
         KinectSensor kinectSensor;
-        AudioManager audioManager = null;
-
-        int sampleRate;
-        DateTime lastTimeDepth;
-        DateTime lastTimeSkeleton;
-        int depthSampleRate = 500;
-        int skeletonSampleRate = 500;
-
-        public BitmapSource curDepthImage;
+        public string DeviceId;
         public DepthImageFrame curDepthPlanarImage;
         public CoordinateMapper coordMap;
+
+
+        //Depth variables
+        int sampleRate;
+        DateTime lastTimeDepth;
+        int depthSampleRate = 500;
+        int skeletonSampleRate = 500;
+        DateTime lastTimeSkeleton;
+
+        public BitmapSource curDepthImage;
         public DepthImageFormat depthImageFormat = DepthImageFormat.Resolution320x240Fps30;
 
-        public string DeviceId;
         private LogFileManager logger;
         /*FaceDetection faceDetection; */
 
@@ -46,97 +51,30 @@ namespace KinectDataCapture
         KinectAudioSource audioSource;
         double curAudioAngle = 0;
         double curAudioConfidence = 0;
-        int curNumPeople;
 
-        int totalFrames = 0;
-        int lastFrames = 0;
-        DateTime lastTime = DateTime.MaxValue;
-
+        /* --- COLOR FRAMES --- */
         int colorFrameSaveRate = 100; //milliseconds
         DateTime lastColorFrameSaveTime;
         int colorImageNum = 0;
+        int framesSaved = 0;
 
-        int faceDetectionSampleRate = 500; //milliseconds
-        DateTime lastFaceDetectionSample;
-
-        int velocitySampleRate = 500;  //milliseconds
-        DateTime lastVelocitySample;
-
-        LoggerQueue loggerQueue;
-        //VideoLogger videoLog;
-
-        /* -- FACE TRACKING STATE --- */
-            bool recordHeadPose = true;
-            bool recordColorImages = true;
-            bool recordDepthImages = true;
-
-
-        FaceLogger Faces;
-
-        public SkeletonTrackingMode skeletonTrackingMode { get; set; }
-
-        string curDir;
-
-
-        Brush[] skeletonBrushes = new Brush[] { Brushes.Indigo, Brushes.DodgerBlue, Brushes.Purple, Brushes.Pink, Brushes.Goldenrod, Brushes.Crimson };
-
+        /*--- DEPTH FRAMES ---*/
+        public static byte[] depthFrame32 = new byte[320 * 240 * 4];
+        ImageBrush recordingBrush;
         const int RED_IDX = 2;
         const int GREEN_IDX = 1;
         const int BLUE_IDX = 0;
-        public static byte[] depthFrame32 = new byte[320 * 240 * 4];
 
+        /* -- FACE TRACKING STATE --- */
+        FaceLogger Faces;
+        bool recordHeadPose = true;
+        bool recordColorImages = true;
+        bool recordDepthImages = true;
 
-        Dictionary<JointType, Brush> jointColors = new Dictionary<JointType, Brush>() { 
-            {JointType.HipCenter, new SolidColorBrush(Color.FromRgb(169, 176, 155))},
-            {JointType.Spine, new SolidColorBrush(Color.FromRgb(169, 176, 155))},
-            {JointType.ShoulderCenter, new SolidColorBrush(Color.FromRgb(168, 230, 29))},
-            {JointType.Head, new SolidColorBrush(Color.FromRgb(200, 0,   0))},
-            {JointType.ShoulderLeft, new SolidColorBrush(Color.FromRgb(79,  84,  33))},
-            {JointType.ElbowLeft, new SolidColorBrush(Color.FromRgb(84,  33,  42))},
-            {JointType.WristLeft, new SolidColorBrush(Color.FromRgb(255, 126, 0))},
-            {JointType.HandLeft, new SolidColorBrush(Color.FromRgb(215,  86, 0))},
-            {JointType.ShoulderRight, new SolidColorBrush(Color.FromRgb(33,  79,  84))},
-            {JointType.ElbowRight, new SolidColorBrush(Color.FromRgb(33,  33,  84))},
-            {JointType.WristRight, new SolidColorBrush(Color.FromRgb(77,  109, 243))},
-            {JointType.HandRight, new SolidColorBrush(Color.FromRgb(37,   69, 243))},
-            {JointType.HipLeft, new SolidColorBrush(Color.FromRgb(77,  109, 243))},
-            {JointType.KneeLeft, new SolidColorBrush(Color.FromRgb(69,  33,  84))},
-            {JointType.AnkleLeft, new SolidColorBrush(Color.FromRgb(229, 170, 122))},
-            {JointType.FootLeft, new SolidColorBrush(Color.FromRgb(255, 126, 0))},
-            {JointType.HipRight, new SolidColorBrush(Color.FromRgb(181, 165, 213))},
-            {JointType.KneeRight, new SolidColorBrush(Color.FromRgb(71, 222,  76))},
-            {JointType.AnkleRight, new SolidColorBrush(Color.FromRgb(245, 228, 156))},
-            {JointType.FootRight, new SolidColorBrush(Color.FromRgb(77,  109, 243))}
-        };
-
-        bool logging = false;
-
-
+        /*-- SKELETON TRACKING --- */
+        public SkeletonTrackingMode skeletonTrackingMode { get; set; }
+        Brush[] skeletonBrushes = new Brush[] { Brushes.Indigo, Brushes.DodgerBlue, Brushes.Purple, Brushes.Pink, Brushes.Goldenrod, Brushes.Crimson };
         Dictionary<int, Dictionary<Joint, Point3f>> curBodyTrackingState;
-        Dictionary<int, Dictionary<Joint, Point3f>> lastBodyTrackingState = null;
-
-        struct SkeletonPosition {
-            public Point3f hipCenter;
-            public Point3f spine;
-            public Point3f head;
-            public Point3f shoulderCenter;
-            public Point3f shoulderLeft;
-            public Point3f shoulderRight;
-            public Point3f elbowLeft;
-            public Point3f elbowRight;
-            public Point3f wristLeft;
-            public Point3f wristRight;
-            public Point3f handLeft;
-            public Point3f handRight;
-            public Point3f hipLeft;
-            public Point3f hipRight;
-            public Point3f kneeLeft;
-            public Point3f kneeRight;
-            public Point3f ankleLeft;
-            public Point3f ankleRight;
-            public Point3f footLeft;
-            public Point3f footRight;
-        }
 
         struct Point3f{
             public float X;
@@ -148,18 +86,6 @@ namespace KinectDataCapture
                 return "(" + X + "," + Y + "," + Z + ")";
             }
         }
-
-        Point3f skeletonAHead;
-        Point3f skeletonBHead;
-        Point3f skeletonASpine;
-        Point3f skeletonBSpine;
-
-        ImageBrush recordingBrush;
-
-        int framesSaved = 0;
-
-        private const string RecognizerId = "SR_MS_en-US_Kinect_10.0";
-
 
         public MainWindow()
         {
@@ -195,7 +121,9 @@ namespace KinectDataCapture
 
         }
 
-        //Propagate change in status from code -> ui
+        #region UI Functions and handlers
+        
+        //Functions
         private void UIUpdate()
         {
             if (kinectSensor == null)
@@ -229,6 +157,44 @@ namespace KinectDataCapture
                 recordHeadChk.IsChecked = recordHeadPose;
             }
 
+        }
+        public void UIUpdateAppStatus(string status)
+        {
+            appStatus.Text += "\n" + status;
+            if (logging)
+            {
+                logger.log(LogFileType.AppStatusFile, status);
+                appStatus.ScrollToEnd();
+            }
+        }
+        private void UIEnableSelectionOfKinectOptions(bool isEnabled)
+        {
+
+            if (isEnabled)
+            {
+                chkNearMode.IsEnabled = true;
+                chkSeatedMode.IsEnabled = true;
+                recordDepthChk.IsEnabled = true;
+                recordColorChk.IsEnabled = true;
+                recordHeadChk.IsEnabled = true;
+                startButton.IsEnabled = true;
+            }
+            else
+            {
+                chkNearMode.IsEnabled = false;
+                chkSeatedMode.IsEnabled = false;
+                recordDepthChk.IsEnabled = false;
+                recordColorChk.IsEnabled = false;
+                recordHeadChk.IsEnabled = false;
+                startButton.IsEnabled = false;
+            }
+        }
+
+        //Handlers
+        private void appStatus_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            appStatus.SelectionStart = appStatus.Text.Length;
+            appStatus.ScrollToEnd();
         }
 
         private void setNearMode(object sender, RoutedEventArgs e)
@@ -322,9 +288,6 @@ namespace KinectDataCapture
                 }
             }
         }
-
-        //On click of select Kinect, enables the selected kinect
-
         private void selectKinect_Click(object sender, RoutedEventArgs e)
         {
             string kinectId = kinectChooser.SelectedValue.ToString();
@@ -354,31 +317,73 @@ namespace KinectDataCapture
             UIUpdate();
         }
 
-        private void UIEnableSelectionOfKinectOptions(bool isEnabled)
+        private void startButton_Click(object sender, RoutedEventArgs e)
         {
-            
-            if (isEnabled)
+
+            if (kinectSensor == null)
             {
-                chkNearMode.IsEnabled = true;
-                chkSeatedMode.IsEnabled = true;
-                recordDepthChk.IsEnabled = true;
-                recordColorChk.IsEnabled = true;
-                recordHeadChk.IsEnabled = true;
-                startButton.IsEnabled = true;
+                UIUpdateAppStatus("Please select a kinect device first.");
+                return;
+            }
+            UIUpdateAppStatus("Capturing data");
+
+            //should make capture settings on UI non-modifyable after this point
+            if (!logging)
+            {
+                UIUpdateAppStatus("Starting logging");
+                resetFramesLogged();
+
+                //Create a log file manager
+                logger = new LogFileManager(kinectSensor.DeviceConnectionId, FilePrefixTbx.Text);
+
+
+                //Start recording audio                
+                wavFilename = System.IO.Path.Combine(logger.getDirectory(), "audio.wav");
+                logAudioRecording("audio.wav");
+                Thread thread = new Thread(new ThreadStart(RecordKinectAudio));
+                thread.Priority = ThreadPriority.Highest;
+                thread.Start();
+
+                //Start recording video
+                //videoLog = new VideoLogger("test.avi");
+
+                //Update UI
+                startButton.Content = "Stop Logging";
+                nofFrames.Content = "Frames loggged: ";
+                logging = true;
             }
             else
             {
-                chkNearMode.IsEnabled = false;
-                chkSeatedMode.IsEnabled = false;
-                recordDepthChk.IsEnabled = false;
-                recordColorChk.IsEnabled = false;
-                recordHeadChk.IsEnabled = false;
-                startButton.IsEnabled = false;
+                UIUpdateAppStatus("\nStopped logging");
+
+                logger.generateChronovizTemplate();
+                logger.closeLogs();
+
+                //Update UI
+                startButton.Content = "Start Logging";
+                logging = false;
+                IsAudioRecording = false;
             }
         }
+        private void Window_Closed(object sender, EventArgs e)
+        {
 
-        
+            if (IsAudioRecording)
+            {
+                IsAudioRecording = false;
+            }
+            audioSource.Stop();
+            kinectSensor.Stop();
+            if (logger != null)
+            {
+                logger.closeLogs();
+            }
+            Environment.Exit(0);
+        }
 
+        #endregion
+
+        #region Kinect Functions
         //Toggles Kinect, can switch from null to new, new to null
         //and old to new sensor.
         private void SwitchToKinect(KinectSensor newKinect)
@@ -442,66 +447,12 @@ namespace KinectDataCapture
                 SwitchToKinect(null);
             }
         }
-        private void startButton_Click(object sender, RoutedEventArgs e)
-        {
-
-            if (kinectSensor == null)
-            {
-                UIUpdateAppStatus("Please select a kinect device first.");
-                return;
-            }
-            UIUpdateAppStatus("Capturing data");
-
-            //should make capture settings on UI non-modifyable after this point
-            if (!logging)
-            {
-                UIUpdateAppStatus("Starting logging");
-                resetFramesLogged();
-
-                //Create a log file manager
-                logger = new LogFileManager(kinectSensor.DeviceConnectionId, FilePrefixTbx.Text);
-
-
-                //Start recording audio                
-                wavFilename = curDir + "\\audio.wav";
-                logAudioRecording("audio.wav");
-                Thread thread = new Thread(new ThreadStart(RecordKinectAudio));
-                thread.Priority = ThreadPriority.Highest;
-                thread.Start();
-
-                //Start recording video
-                //videoLog = new VideoLogger("test.avi");
-
-
-                //Update UI
-                startButton.Content = "Stop Logging";
-                nofFrames.Content = "Frames loggged: ";
-                logging = true;
-            }
-            else {
-                UIUpdateAppStatus("\nStopped logging");
-
-                logger.generateChronovizTemplate();
-
-                if (loggerQueue != null)
-                {
-                    loggerQueue.endLogging();
-                    loggerQueue = null;
-                }
-
-
-                //Update UI
-                startButton.Content = "Start Logging";
-                logging = false;
-                IsAudioRecording = false;
-            }
-        }
 
         public void initializeVideoStreams()
         {
             kinectSensor.ColorStream.Enable();
 
-            
+
             kinectSensor.DepthStream.Enable(depthImageFormat);
 
             kinectSensor.SkeletonStream.Enable();
@@ -510,15 +461,12 @@ namespace KinectDataCapture
 
             kinectSensor.Start();
 
-            lastTime = DateTime.Now;
-
-
             kinectSensor.DepthFrameReady += new EventHandler<DepthImageFrameReadyEventArgs>(nui_DepthFrameReady);
             kinectSensor.ColorFrameReady += new EventHandler<ColorImageFrameReadyEventArgs>(nui_ColorFrameReady);
             kinectSensor.AllFramesReady += new EventHandler<AllFramesReadyEventArgs>(nui_AllFramesReady);
-            
-        }
 
+        }
+        
             
         // Converts a 16-bit grayscale depth frame which includes player indexes into a 32-bit frame
         // that displays different players in different colors
@@ -532,33 +480,6 @@ namespace KinectDataCapture
             {
                 int player = depthFrame16[i16] & DepthImageFrame.PlayerIndexBitmask;
                 int realDepth = depthFrame16[i16] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-
-                if (minDepths.ContainsKey(player))
-                {
-                    int minDepth = minDepths[player];
-                    if (minDepth > realDepth)
-                    {
-                        minDepths.Remove(player);
-                        minDepths.Add(player, realDepth);
-                    }
-                }
-                else {
-                    minDepths.Add(player, realDepth);
-                }
-
-                if (maxDepths.ContainsKey(player))
-                {
-                    int maxDepth = maxDepths[player];
-                    if (maxDepth < realDepth)
-                    {
-                        maxDepths.Remove(player);
-                        maxDepths.Add(player, realDepth);
-                    }
-                }
-                else {
-                    maxDepths.Add(player, realDepth);                
-                }
-                
 
                 // transform 13-bit depth information into an 8-bit intensity appropriate
                 // for display (we disregard information in most significant bit)
@@ -609,35 +530,57 @@ namespace KinectDataCapture
                         break;
                 }
             }
-            if (logging) {
-                //logDepthData(minDepths,maxDepths);
-            }
             return depthFrame32;
         }
+        #endregion
 
-        void logDepthData(Dictionary<int, int> minDepths, Dictionary<int, int> maxDepths)
+        #region Frame Ready Handlers
+
+        void nui_ColorFrameReady(object sender, ColorImageFrameReadyEventArgs e)
         {
-            if (!logging)
-                return;
 
-            IDictionaryEnumerator minDepthInfo = minDepths.GetEnumerator();
-            while(minDepthInfo.MoveNext()){
-                String depthData = "";
-                int player = (int)minDepthInfo.Entry.Key;
-                depthData += minDepths[player];
-                if (maxDepths.ContainsKey(player)) {
-                    depthData += "," + maxDepths[player];
-                }
-                //logger.log(LogFileType.DepthImageFile, player, depthData);
+
+            // 32-bit per pixel, RGBA image
+            ColorImageFrame colorFrame = e.OpenColorImageFrame();
+            if (colorFrame == null)
+            {
+                return;
             }
-        }
+            byte[] Image = new byte[colorFrame.PixelDataLength];
+            colorFrame.CopyPixelDataTo(Image);
 
-        void logAudioRecordingData()
-        {
+
+            BitmapSource source = BitmapSource.Create(
+                colorFrame.Width, colorFrame.Height, 96, 96, PixelFormats.Bgr32, null, Image, colorFrame.Width * colorFrame.BytesPerPixel);
+
+
+
+
             if (!logging)
-                return;
+            {
+                ImageBrush imageBrush = new ImageBrush(source);
+                video.Background = imageBrush;
+            }
+            else
+            {
+                video.Background = recordingBrush;
+                //videoLog.AddFrame(source);
+            }
 
-            logger.log(LogFileType.AudioRecordingFile, wavFilename);
+            if ((DateTime.Now.Subtract(lastColorFrameSaveTime)).TotalMilliseconds > colorFrameSaveRate)
+            {
+                if (logging)
+                {
+                    addFrameLogged();
+                    logColorFrameToJpg(source);
+                    logDepthFrameToJpg(curDepthImage);
+
+                    lastColorFrameSaveTime = DateTime.Now;
+                }
+            }
+            if (colorFrame != null)
+                colorFrame.Dispose();
+
         }
 
         void nui_DepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
@@ -670,32 +613,10 @@ namespace KinectDataCapture
             if (logging)
                 logger.log(LogFileType.AudioAngleFile, info);
 
-        }
+            if (curDepthPlanarImage != null)
+                curDepthPlanarImage.Dispose();
+        }        
 
-
-
-        private Point getDisplayPosition(Joint joint)
-        {
-            ColorImagePoint colPoint = kinectSensor.MapSkeletonPointToColor(joint.Position, ColorImageFormat.RgbResolution640x480Fps30);
-            return new Point(colPoint.X, colPoint.Y);
-        }
-
-        Polyline getBodySegment(Microsoft.Kinect.JointCollection joints, Brush brush, params JointType[] ids)
-        {
-            PointCollection points = new PointCollection(ids.Length);
-            for (int i = 0; i < ids.Length; ++i)
-            {
-                points.Add(getDisplayPosition(joints[ids[i]]));
-            }
-
-            Polyline polyline = new Polyline();
-            polyline.Points = points;
-            polyline.Stroke = brush;
-            polyline.StrokeThickness = 5;
-            return polyline;
-        }
-
-        //void nui_SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
         void nui_AllFramesReady(object sender, AllFramesReadyEventArgs e)
         {
             bool allFramesGood = false;
@@ -726,10 +647,10 @@ namespace KinectDataCapture
                     Faces.sendNewFrames(colorImageFrame, depthImageFrame, skeletonFrame);
                 }
 
-                
+
             }
 
-            
+
             //Initialize variables
             int iSkeleton = 0;
             int numSkeletons = 0;
@@ -786,13 +707,13 @@ namespace KinectDataCapture
                     {
                         if (joint.TrackingState == JointTrackingState.Tracked)
                         {
-                            addJoint(jointPositions, joint);                            
+                            addJoint(jointPositions, joint);
                             if (!logging)
                                 drawJoint(depthSkelCanvas, userBrush, joint);
                         }
                         else //Add all points so that csv lines up
-                        {                                
-                            addJoint(jointPositions, joint);                                
+                        {
+                            addJoint(jointPositions, joint);
                         }
                     }
                     //Draw Stick Figure
@@ -811,7 +732,7 @@ namespace KinectDataCapture
                                 lblHeadPose.Content = "Head Pose: (" + Math.Round(headPose.pitch) + "," + Math.Round(headPose.roll) + "," + Math.Round(headPose.yaw) + ")";
                             else
                                 lblHeadPose.Content = "Head Pose: ";
-                            
+
                             string dataString = headPose.pitch + "," + headPose.roll + "," + headPose.yaw;
                             if (logging)
                                 logger.log(LogFileType.HeadTrackFile, skeleton.TrackingId, dataString);
@@ -828,18 +749,38 @@ namespace KinectDataCapture
                 }
                 iSkeleton++;
             } // for each skeleton
-        
+
             logSkeletonJointPositions();
             //logVelocity();
-        //logBodyProximity(headDistance, spineDistance);
-            
-    }
+            //logBodyProximity(headDistance, spineDistance);
+            if (skeletonFrame != null)
+                skeletonFrame.Dispose();
+            if (colorImageFrame != null)
+                colorImageFrame.Dispose();
+            if (depthImageFrame != null)
+                depthImageFrame.Dispose();
 
+        }
 
+        #endregion
 
+        #region Kinect Joints Handling
 
+        Polyline getBodySegment(Microsoft.Kinect.JointCollection joints, Brush brush, params JointType[] ids)
+        {
+            PointCollection points = new PointCollection(ids.Length);
+            for (int i = 0; i < ids.Length; ++i)
+            {
+                ColorImagePoint colPoint = coordMap.MapSkeletonPointToColorPoint(joints[ids[i]].Position, ColorImageFormat.RgbResolution640x480Fps30);
+                points.Add(new Point(colPoint.X, colPoint.Y));
+            }
 
-
+            Polyline polyline = new Polyline();
+            polyline.Points = points;
+            polyline.Stroke = brush;
+            polyline.StrokeThickness = 5;
+            return polyline;
+        }
 
         private static Joint addJoint(Dictionary<Joint, Point3f> jointPositions, Joint joint)
         {
@@ -853,6 +794,9 @@ namespace KinectDataCapture
             jointPositions.Add(joint, jointPoint);
             return joint;
         }
+        #endregion
+
+        #region Drawing Functions
 
         private Joint drawJoint(Canvas skeletonCanvas, Brush userBrush, Joint joint)
         {
@@ -924,121 +868,36 @@ namespace KinectDataCapture
             }
 
         }
-        
-        void Oldnui_AllFramesReady(object sender, AllFramesReadyEventArgs e)
+        private Polyline CreateFigure(Skeleton skeleton, Brush brush, JointType[] joints)
         {
-            // Initialize data arrays
-            byte[] colorPixelData = new byte[kinectSensor.ColorStream.FramePixelDataLength];
-            short[] depthPixelData = new short[kinectSensor.DepthStream.FramePixelDataLength];
-            Skeleton[] skeletonData = new Skeleton[6];
-            ColorImageFrame colorImageFrame = null;
-            DepthImageFrame depthImageFrame = null;
-            SkeletonFrame skeletonFrame = null;
+            Polyline figure = new Polyline();
 
-            try
+            figure.StrokeThickness = 8;
+            figure.Stroke = brush;
+
+            for (int i = 0; i < joints.Length; i++)
             {
-                colorImageFrame = e.OpenColorImageFrame();
-                depthImageFrame = e.OpenDepthImageFrame();
-                skeletonFrame = e.OpenSkeletonFrame();
-
-                if (colorImageFrame == null || depthImageFrame == null || skeletonFrame == null)
-                {
-                    return;
-                }
-
-                Faces.sendNewFrames(colorImageFrame, depthImageFrame, skeletonFrame);
-
+                figure.Points.Add(getJointPoint(skeleton.Joints[joints[i]]));
             }
-            finally
-            {
-                if (colorImageFrame != null)
-                {
-                    colorImageFrame.Dispose();
-                }
 
-                if (depthImageFrame != null)
-                {
-                    depthImageFrame.Dispose();
-                }
-
-                if (skeletonFrame != null)
-                {
-                    skeletonFrame.Dispose();
-                }
-            }
+            return figure;
         }
 
-        void logVelocity() {
 
-            if (!logging)
-                return;
+        private Point getJointPoint(Joint joint)
+        {
 
-            if ((DateTime.Now.Subtract(lastVelocitySample)).Milliseconds > velocitySampleRate)
-            {
-                lastVelocitySample = DateTime.Now;
-            }
-            else {
-                return;
-            }
-            
-            //case for first call to this method
-            if (lastBodyTrackingState == null) {
-                lastBodyTrackingState = new Dictionary<int, Dictionary<Joint, Point3f>>(curBodyTrackingState);
-                return;
-            }
+            DepthImagePoint point = coordMap.MapSkeletonPointToDepthPoint(joint.Position, depthImageFormat);
 
-            IDictionaryEnumerator curSkeletonData = curBodyTrackingState.GetEnumerator();
+            point.X *= (int)this.depthSkelCanvas.ActualWidth / kinectSensor.DepthStream.FrameWidth;
+            point.Y *= (int)this.depthSkelCanvas.ActualHeight / kinectSensor.DepthStream.FrameHeight;
 
-            //calculate distance between curren bodyTracking state and lastBodyTrackingState
-
-            while (curSkeletonData.MoveNext())
-            {
-                string dataString = "";
-                int skeletonID = (int)curSkeletonData.Entry.Key;
-
-                //compare between the same skeleton
-                if(lastBodyTrackingState.ContainsKey(skeletonID) && curBodyTrackingState.ContainsKey(skeletonID)){
-
-                    Dictionary<Joint,Point3f> curJointPositions = curBodyTrackingState[skeletonID];
-                    Dictionary<Joint, Point3f> lastJointPositions = lastBodyTrackingState[skeletonID];
-
-                    //iterate through all joints, and compute distance if both joints are tracked
-                    IDictionaryEnumerator curJoints = curJointPositions.GetEnumerator();
-
-                    while (curJoints.MoveNext())
-                    {
-                        Joint curJointID = (Joint)curJoints.Entry.Key;
-                        Point3f curPosition = (Point3f)curJoints.Entry.Value;
-
-                        if(curPosition.tracked){
-                            if (lastJointPositions.ContainsKey(curJointID))
-                            {
-                                Point3f lastPosition = (Point3f)lastJointPositions[curJointID];
-                                if (lastPosition.tracked)
-                                {
-                                    double distance = Distance3D(lastPosition, curPosition);
-                                    double velocity = Velocity(distance, lastPosition.time, curPosition.time);
-                                    dataString += velocity + ",";
-                                }
-                                else {
-                                    dataString += ",";
-                                }
-                            }
-                            else {
-                                dataString += ",";
-                            }
-                        }
-                        else{
-                            dataString += ",";
-                        }
-                    }
-                }
-                
-            }
-            lastBodyTrackingState.Clear();
-            lastBodyTrackingState = new Dictionary<int, Dictionary<Joint, Point3f>>(curBodyTrackingState);
+            return new Point(point.X, point.Y);
         }
 
+        #endregion
+
+        #region Logging Functions
 
         void logSkeletonJointPositions() {
 
@@ -1072,52 +931,35 @@ namespace KinectDataCapture
             }
         }
 
-        void nui_ColorFrameReady(object sender, ColorImageFrameReadyEventArgs e)
+        void logDepthData(Dictionary<int, int> minDepths, Dictionary<int, int> maxDepths)
         {
-
-
-            // 32-bit per pixel, RGBA image
-            ColorImageFrame colorFrame = e.OpenColorImageFrame();
-            if (colorFrame == null)
-            {
-                return;
-            }
-            byte[] Image = new byte[colorFrame.PixelDataLength];
-            colorFrame.CopyPixelDataTo(Image);
-
-            
-            BitmapSource source = BitmapSource.Create(
-                colorFrame.Width, colorFrame.Height, 96, 96, PixelFormats.Bgr32, null, Image, colorFrame.Width * colorFrame.BytesPerPixel);
-
-
-
-
             if (!logging)
-            {
-                ImageBrush imageBrush = new ImageBrush(source);
-                video.Background = imageBrush;
-            }
-            else
-            {
-                video.Background = recordingBrush;
-                //videoLog.AddFrame(source);
-            }
+                return;
 
-            if ((DateTime.Now.Subtract(lastColorFrameSaveTime)).TotalMilliseconds > colorFrameSaveRate)
+            IDictionaryEnumerator minDepthInfo = minDepths.GetEnumerator();
+            while (minDepthInfo.MoveNext())
             {
-                if (logging)
+                String depthData = "";
+                int player = (int)minDepthInfo.Entry.Key;
+                depthData += minDepths[player];
+                if (maxDepths.ContainsKey(player))
                 {
-                    addFrameLogged();
-                    saveColorFrameToJpg(source);
-                    saveDepthFrameToJpg(curDepthImage);
-
-                    lastColorFrameSaveTime = DateTime.Now;
+                    depthData += "," + maxDepths[player];
                 }
+                //logger.log(LogFileType.DepthImageFile, player, depthData);
             }
-
         }
 
-        void saveColorFrameToJpg(BitmapSource image) {
+        void logAudioRecordingData()
+        {
+            if (!logging)
+                return;
+
+            logger.log(LogFileType.AudioRecordingFile, wavFilename);
+        }
+
+        void logColorFrameToJpg(BitmapSource image)
+        {
 
             if ((!logging) || (!recordColorImages))
                 return;
@@ -1144,10 +986,10 @@ namespace KinectDataCapture
 
             logger.log(LogFileType.ColorImageFile, fileName);
             colorImageNum++;
-        
+
         }
 
-        void saveDepthFrameToJpg(BitmapSource image)
+        void logDepthFrameToJpg(BitmapSource image)
         {
 
             if ((!logging) || (!recordDepthImages))
@@ -1178,54 +1020,8 @@ namespace KinectDataCapture
 
         }
 
-     
 
 
-        void sampleImageData(object sender, EventArgs e) {
-
-            //loggerQueue.addToQueue(depthTrackingFileName, player + "=" + realDepth);
-
-        }
-
-
-        private void Window_Closed(object sender, EventArgs e)
-        {
-            if(loggerQueue != null){
-                loggerQueue.endLogging();
-                }
-            if (IsAudioRecording)
-            {
-                IsAudioRecording = false;
-            }
-            if (audioManager != null)
-                audioManager.Stop();
-            kinectSensor.Stop();
-            audioSource.Stop();
-            Environment.Exit(0);
-        }
-
-        public void updateAudioAngle(string angle) {
-            if (logging)
-            {
-                logger.log(LogFileType.AudioAngleFile, angle);
-            }
-        }
-
-        public void updateAudioState(string audioState) {
-            if (logging)
-            {
-                logger.log(LogFileType.AudioStateFile, audioState);
-            }
-        }
-
-        public void UIUpdateAppStatus(string status)
-        {
-            appStatus.Text += "\n" + status;
-            if (logging) {
-                logger.log(LogFileType.AppStatusFile, status);
-                appStatus.ScrollToEnd();
-            }
-        }
 
         public void addFrameLogged()
         {
@@ -1241,7 +1037,7 @@ namespace KinectDataCapture
             nofFrames.Content = "Frames logged:    " + framesSaved;
         }
 
-
+        #endregion
         double Distance3D(Point3f point1, Point3f point2)
         {
             double squared1 = Math.Pow((point2.X - point1.X), 2);
@@ -1278,20 +1074,6 @@ namespace KinectDataCapture
         
 
 
-        public void setSampleRate(int sampleRate_arg)
-        {
-            sampleRate = sampleRate_arg;
-        }
-
-        public int getSampleRate()
-        {
-            return sampleRate;
-        }
-
-        private void appStatus_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
-        {
-
-        }
         #region audioRecording
 
 
@@ -1351,76 +1133,12 @@ namespace KinectDataCapture
         }
         #endregion
 
-        #region skeleton drawing
-        private Polyline CreateFigure(Skeleton skeleton, Brush brush, JointType[] joints)
-        {
-            Polyline figure = new Polyline();
-
-            figure.StrokeThickness = 8;
-            figure.Stroke = brush;
-
-            for (int i = 0; i < joints.Length; i++)
-            {
-                figure.Points.Add(getJointPoint(skeleton.Joints[joints[i]]));
-            }
-
-            return figure;
-        }
-
-
-        private Point getJointPoint(Joint joint)
-        {
-
-            DepthImagePoint point = coordMap.MapSkeletonPointToDepthPoint(joint.Position, depthImageFormat);
-            
-            point.X *= (int)this.depthSkelCanvas.ActualWidth / kinectSensor.DepthStream.FrameWidth;
-            point.Y *= (int)this.depthSkelCanvas.ActualHeight / kinectSensor.DepthStream.FrameHeight;
-
-            return new Point(point.X, point.Y);
-        }
-        #endregion
-
-        #region properties
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private void OnPropertyChanged(string propName)
-        {
-            if (PropertyChanged != null)
-                PropertyChanged(this, new PropertyChangedEventArgs(propName));
-        }
-
-        private double _beamAngle;
-
-        public double BeamAngle
-        {
-            get { return _beamAngle; }
-            set
-            {
-                _beamAngle = value;
-                OnPropertyChanged("BeamAngle");
-            }
-        }
-
-        #endregion
-
-        private void appStatus_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            appStatus.SelectionStart = appStatus.Text.Length;
-            appStatus.ScrollToEnd();
-        }
-
-        private void VideoCaption_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
 
 
 
 
 
-
-        
+       
     }
 
 
