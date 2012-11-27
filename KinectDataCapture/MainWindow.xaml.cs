@@ -74,7 +74,10 @@ namespace KinectDataCapture
         /*-- SKELETON TRACKING --- */
         public SkeletonTrackingMode skeletonTrackingMode { get; set; }
         Brush[] skeletonBrushes = new Brush[] { Brushes.Indigo, Brushes.DodgerBlue, Brushes.Purple, Brushes.Pink, Brushes.Goldenrod, Brushes.Crimson };
-        Dictionary<int, Dictionary<Joint, Point3f>> curBodyTrackingState;
+        Dictionary<int, Dictionary<Joint, Point3f>> currentTrackedSkeletons;
+        //Maps the local skeleton index against the tracking id from Kinect
+        Dictionary<int, int> trackedSkeletonsMapper;
+        private int localTrackingNum;
 
         struct Point3f{
             public float X;
@@ -166,6 +169,26 @@ namespace KinectDataCapture
                 logger.log(LogFileType.AppStatusFile, status);
                 appStatus.ScrollToEnd();
             }
+        }
+        public void UIUpdateNumHeadsTracked(int numHeads)
+        {
+            lblHeadsTracked.Content = "Heads Tracked : " + numHeads;
+        }
+
+        public void UIUpdateNumSkeletonsTracked(int numSkeletons)
+        {
+            lblSkeletonsTracked.Content = "SkeletonsTracked : " + numSkeletons;
+        }
+
+        public void UIAddNumFramesLogged()
+        {
+            framesSaved++;
+            lblNumberOfFramesLogged.Content = "Frames logged : " + framesSaved;
+        }
+        public void UIResetFramesLogged()
+        {
+            framesSaved = 0;
+            lblNumberOfFramesLogged.Content = "Frames logged : " + framesSaved;
         }
         private void UIEnableSelectionOfKinectOptions(bool isEnabled)
         {
@@ -331,11 +354,10 @@ namespace KinectDataCapture
             if (!logging)
             {
                 UIUpdateAppStatus("Starting logging");
-                resetFramesLogged();
+                UIResetFramesLogged();
 
                 //Create a log file manager
                 logger = new LogFileManager(kinectSensor.DeviceConnectionId, FilePrefixTbx.Text);
-
 
                 //Start recording audio                
                 wavFilename = System.IO.Path.Combine(logger.getDirectory(), "audio.wav");
@@ -344,12 +366,12 @@ namespace KinectDataCapture
                 thread.Priority = ThreadPriority.Highest;
                 thread.Start();
 
-                //Start recording video
-                //videoLog = new VideoLogger("test.avi");
+                //Initialize localSkeletonTracking
+                initLocalSkeletonMapper();
 
                 //Update UI
                 startButton.Content = "Stop Logging";
-                nofFrames.Content = "Frames loggged: ";
+                
                 logging = true;
             }
             else
@@ -571,7 +593,7 @@ namespace KinectDataCapture
             {
                 if (logging)
                 {
-                    addFrameLogged();
+                    UIAddNumFramesLogged();
                     logColorFrameToJpg(source);
                     logDepthFrameToJpg(curDepthImage);
 
@@ -654,8 +676,9 @@ namespace KinectDataCapture
             //Initialize variables
             int iSkeleton = 0;
             int numSkeletons = 0;
-            Brush userBrush = skeletonBrushes[numSkeletons % skeletonBrushes.Length];
+            int numHeads = 0;
             Skeleton skeleton;
+            Brush userBrush;
             Brush[] brushes = new Brush[6];
             brushes[0] = new SolidColorBrush(Color.FromRgb(255, 0, 0));
             brushes[1] = new SolidColorBrush(Color.FromRgb(0, 255, 0));
@@ -665,13 +688,13 @@ namespace KinectDataCapture
             brushes[5] = new SolidColorBrush(Color.FromRgb(128, 128, 255));
 
             //Clear tracking state or initialize
-            if (curBodyTrackingState != null)
+            if (currentTrackedSkeletons != null)
             {
-                curBodyTrackingState.Clear();
-            }
+                currentTrackedSkeletons.Clear();
+                            }
             else
             {
-                curBodyTrackingState = new Dictionary<int, Dictionary<Joint, Point3f>>();
+                currentTrackedSkeletons = new Dictionary<int, Dictionary<Joint, Point3f>>();
             }
 
             //Create Imagebrush for depth image (recording brush to save)
@@ -696,12 +719,15 @@ namespace KinectDataCapture
             {
                 //Create a dictionary of jointPositions
                 skeleton = skeletonData[i];
-                numSkeletons++;
-                Dictionary<Joint, Point3f> jointPositions = new Dictionary<Joint, Point3f>();
+                userBrush = skeletonBrushes[numSkeletons % skeletonBrushes.Length];
+                
 
                 //If tracking this skeleton
                 if (SkeletonTrackingState.Tracked == skeleton.TrackingState)
                 {
+                    Dictionary<Joint, Point3f> jointPositions = new Dictionary<Joint, Point3f>();
+                    numSkeletons++;
+
                     //For each joint, add to joint positions and draw
                     foreach (Joint joint in skeleton.Joints)
                     {
@@ -729,13 +755,12 @@ namespace KinectDataCapture
                         {
                             //add to joints
                             if (headPose.valid)
-                                lblHeadPose.Content = "Head Pose: (" + Math.Round(headPose.pitch) + "," + Math.Round(headPose.roll) + "," + Math.Round(headPose.yaw) + ")";
-                            else
-                                lblHeadPose.Content = "Head Pose: ";
+                                numHeads++;
 
                             string dataString = headPose.pitch + "," + headPose.roll + "," + headPose.yaw;
+
                             if (logging)
-                                logger.log(LogFileType.HeadTrackFile, skeleton.TrackingId, dataString);
+                                logger.log(LogFileType.HeadTrackFile, getLocalSkeletonId(skeleton.TrackingId), dataString);
                             else
                             {
                                 drawHeadPosition(depthSkelCanvas, userBrush, skeleton, headPose);
@@ -745,12 +770,14 @@ namespace KinectDataCapture
 
 
                     //Add the whole of joint positions to curBodyTrackingState
-                    curBodyTrackingState.Add(skeleton.TrackingId, jointPositions);
+                    currentTrackedSkeletons.Add(getLocalSkeletonId(skeleton.TrackingId), jointPositions);
                 }
                 iSkeleton++;
             } // for each skeleton
 
             logSkeletonJointPositions();
+            UIUpdateNumHeadsTracked(numHeads);
+            UIUpdateNumSkeletonsTracked(numSkeletons);
             //logVelocity();
             //logBodyProximity(headDistance, spineDistance);
             if (skeletonFrame != null)
@@ -759,6 +786,27 @@ namespace KinectDataCapture
                 colorImageFrame.Dispose();
             if (depthImageFrame != null)
                 depthImageFrame.Dispose();
+
+        }
+
+        private void initLocalSkeletonMapper()
+        {
+            trackedSkeletonsMapper = new Dictionary<int,int>();
+            localTrackingNum = 0;
+        }
+        private int getLocalSkeletonId(int skeletonTrackingId)
+        {
+            int localTrackingId = 0;
+            if (trackedSkeletonsMapper.TryGetValue(skeletonTrackingId, out localTrackingId))
+                return localTrackingId;
+            else
+            {
+                int newLocalSkeletonId = localTrackingNum;
+                trackedSkeletonsMapper.Add(skeletonTrackingId, newLocalSkeletonId);
+                localTrackingNum++;
+                return newLocalSkeletonId;
+            }
+
 
         }
 
@@ -904,10 +952,10 @@ namespace KinectDataCapture
             if (!logging)
                 return;
 
-            if (curBodyTrackingState == null)
+            if (currentTrackedSkeletons == null)
                 return;
 
-            IDictionaryEnumerator skeletons = curBodyTrackingState.GetEnumerator();
+            IDictionaryEnumerator skeletons = currentTrackedSkeletons.GetEnumerator();
 
             while(skeletons.MoveNext()){
                 int skeletonID = (int)skeletons.Entry.Key;
@@ -1023,19 +1071,7 @@ namespace KinectDataCapture
 
 
 
-        public void addFrameLogged()
-        {
-            framesSaved++;
-            nofFrames.Content = "Frames logged:    " + framesSaved;
-        }
 
-
-
-        public void resetFramesLogged()
-        {
-            framesSaved=0;
-            nofFrames.Content = "Frames logged:    " + framesSaved;
-        }
 
         #endregion
         double Distance3D(Point3f point1, Point3f point2)

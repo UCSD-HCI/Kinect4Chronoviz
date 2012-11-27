@@ -90,8 +90,9 @@
             </StackPanel>
             <StackPanel Height="140" Name="panel4" Width="Auto" Margin="10,0,0,60" >
                 <Button Width="Auto" Height="30" Name="startButton" Click="startButton_Click" Content="Start Logging"></Button>
-                <Label FontSize="14" Height="25" Name="lblHeadPose" Width="200" Content="Head Pose:   "  HorizontalAlignment="Left" />
-                <Label FontSize="14" Name="nofFrames" Focusable="False" Content="Frames logged:    0" Width="200" Height="30" HorizontalAlignment="Left" />
+                <Label Height="26" Name="lblHeadsTracked" Width="200"   HorizontalAlignment="Left" />
+                <Label Height="26" Name="lblSkeletonsTracked" Width="200"   HorizontalAlignment="Left" />
+                <Label  Height="26" Name="lblNumberOfFramesLogged" Focusable="False" HorizontalAlignment="Left" />
             </StackPanel>
         </StackPanel>
     </StackPanel>
