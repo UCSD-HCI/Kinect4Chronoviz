@@ -57,19 +57,28 @@ namespace KinectDataCapture
 
             //Create Data Source Elements
             XmlElement filePath = doc.CreateElement("filePath");
-            XmlElement typeEl = doc.CreateElement("type");
-            XmlElement timeCoding = doc.CreateElement("timeCoding");
-            XmlElement startTime = doc.CreateElement("startTime");
-
             filePath.InnerText = filename;
-            typeEl.InnerText = type.ToString() + "DataSource";
-            timeCoding.InnerText = "Relative";
-            startTime.InnerText = "0.0";
-
             dataSource.AppendChild(filePath);
+
+            XmlElement typeEl = doc.CreateElement("type");
+            typeEl.InnerText = type.ToString() + "DataSource";
             dataSource.AppendChild(typeEl);
+
+            XmlElement timeCoding = doc.CreateElement("timeCoding");
+            timeCoding.InnerText = "Relative";
             dataSource.AppendChild(timeCoding);
+
+            XmlElement startTime = doc.CreateElement("startTime");
+            startTime.InnerText = "0.0";
             dataSource.AppendChild(startTime);
+          
+            if (type == DataSourceType.CSV)
+            {
+                XmlElement timeColumn = doc.CreateElement("timeColumn");
+                timeColumn.InnerText = "Time";
+                dataSource.AppendChild(timeColumn);
+            }
+            
 
             XmlElement dataSetsEl = doc.CreateElement("dataSets");
             //Create Data Sets

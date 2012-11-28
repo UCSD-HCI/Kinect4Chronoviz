@@ -224,6 +224,7 @@ namespace KinectDataCapture
         public void addLogFileToTemplate(ChronoVizXML xml, LogFileType type, string filename)
         {
             LinkedList<ChronoVizDataSet> dataSets = new LinkedList<ChronoVizDataSet>();
+            filename = filename.Replace("\\", "/");
             switch (type)
             {
                 case LogFileType.ColorImageFile:
@@ -235,18 +236,18 @@ namespace KinectDataCapture
                     xml.addDataSource(ChronoVizXML.DataSourceType.CSV, filename, dataSets);
                     break;
                 case LogFileType.AudioAngleFile:
-                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.ImageSequence, "AudioAngle", prefix + "AudioAngle"));
-                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.ImageSequence, "AudioConfidence", prefix + "AudioConfidence"));
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "AudioAngle", prefix + "AudioAngle"));
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "AudioConfidence", prefix + "AudioConfidence"));
                     xml.addDataSource(ChronoVizXML.DataSourceType.CSV, filename, dataSets);
                     break;
-                case LogFileType.AudioRecordingFile:
-                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.Audio, "FileName", prefix + "DepthImages"));
-                    xml.addDataSource(ChronoVizXML.DataSourceType.CSV, filename, dataSets);
+                case LogFileType.AudioRecordingFile:                                
+                    //Currently does not load from name in Audio log file
+                    xml.addDataSource(ChronoVizXML.DataSourceType.Video, "audio.wav", dataSets);
                     break;
                 case LogFileType.HeadTrackFile:
-                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.Audio, "Pitch", prefix + "Pitch"));
-                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.Audio, "Roll", prefix + "Roll"));
-                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.Audio, "Yaw", prefix + "Yaw"));
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "Pitch", prefix + "Pitch"));
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "Roll", prefix + "Roll"));
+                    dataSets.AddLast(new ChronoVizDataSet(ChronoVizDataSet.Type.TimeSeries, "Yaw", prefix + "Yaw"));
                     xml.addDataSource(ChronoVizXML.DataSourceType.CSV, filename, dataSets);
                     break;
                 case LogFileType.BodyTrackFile:
