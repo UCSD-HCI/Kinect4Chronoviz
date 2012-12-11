@@ -120,6 +120,9 @@ namespace KinectDataCapture
 
             UIUpdate();
             UIUpdateAppStatus("WindowLoaded");
+            //Initialize localSkeletonTracking
+            initLocalSkeletonMapper();
+
 
 
         }
@@ -367,7 +370,8 @@ namespace KinectDataCapture
                 thread.Start();
 
                 //Initialize localSkeletonTracking
-                initLocalSkeletonMapper();
+                trackedSkeletonsMapper.Clear();
+
 
                 //Update UI
                 startButton.Content = "Stop Logging";
@@ -968,7 +972,7 @@ namespace KinectDataCapture
                     Point3f position = (Point3f)joints.Entry.Value;
                     if (position.tracked)
                     {
-                        dataString += position.X + "," + position.Y + "," + position.Z + ",";
+                        dataString += -position.X + "," + -position.Y + "," + position.Z + ",";
                     }
                     else {
                         dataString += ",,,";
