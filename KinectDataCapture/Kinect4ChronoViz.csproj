@@ -86,18 +86,6 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Emgu.CV">
-      <HintPath>.\Emgu.CV.dll</HintPath>
-    </Reference>
-    <Reference Include="Emgu.CV.UI">
-      <HintPath>.\Emgu.CV.UI.dll</HintPath>
-    </Reference>
-    <Reference Include="Emgu.CV.UI.resources">
-      <HintPath>.\Emgu.CV.UI.resources.dll</HintPath>
-    </Reference>
-    <Reference Include="Emgu.Util">
-      <HintPath>.\Emgu.Util.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Kinect, Version=1.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.Samples.Kinect.WpfViewers, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -132,7 +120,6 @@
     <Compile Include="FaceLogger.cs" />
     <Compile Include="LogFileManager.cs" />
     <Compile Include="RecorderHelper.cs" />
-    <Compile Include="VideoLogger.cs" />
     <Compile Include="VocabularyParser.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
